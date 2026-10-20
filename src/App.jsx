@@ -8,6 +8,7 @@ import SuccessScreen from './components/SuccessScreen.jsx';
 import { analyse, makePatientId } from './demoModel.js';
 import { rasterise } from './fundus.js';
 import { composeScan, generateReport } from './report.js';
+import { addHistoryEntry, clearHistory, loadHistory } from './history.js';
 
 const STEP_INDEX = { upload: 0, quality: 1, results: 2, success: 3 };
 
@@ -21,6 +22,7 @@ export default function App() {
   const [patientId, setPatientId] = useState('');
   const [elapsed, setElapsed] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [history, setHistory] = useState(loadHistory);
 
   // Cached composite so "Download again" works after the results view has
   // unmounted.
@@ -55,7 +57,9 @@ export default function App() {
     // DEMO: hardcoded for presentation, replace with real model inference API call.
     analyse(scan.sampleId).then((res) => {
       setResult(res);
-      setPatientId(makePatientId());
+      const id = makePatientId();
+      setPatientId(id);
+      setHistory(addHistoryEntry({ patientId: id, scanName: scan.name, result: res }));
       setScreen('results');
     });
   }
@@ -103,6 +107,8 @@ export default function App() {
             onPickSample={pickSample}
             onAnalyse={startAnalysis}
             onClear={() => setScan(null)}
+            history={history}
+            onClearHistory={() => setHistory(clearHistory())}
           />
         )}
 

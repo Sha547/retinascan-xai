@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
 import { SAMPLES } from '../demoModel.js';
+import HistoryList from './HistoryList.jsx';
 import { CheckIcon, ScanIcon, UploadIcon } from './Icons.jsx';
 
-export default function UploadScreen({ scan, onPickFile, onPickSample, onAnalyse, onClear }) {
+export default function UploadScreen({ scan, onPickFile, onPickSample, onAnalyse, onClear, history, onClearHistory }) {
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef(null);
 
@@ -133,6 +134,8 @@ export default function UploadScreen({ scan, onPickFile, onPickSample, onAnalyse
           </p>
         </aside>
       </div>
+
+      <HistoryList entries={history} onClear={onClearHistory} />
     </div>
   );
 }

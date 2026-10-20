@@ -50,3 +50,15 @@ Everything runs client-side — no backend, no database, no API keys.
 Swapping in a real backend means changing `analyse()` in `src/demoModel.js` to
 call the inference service and return the same result shape; nothing else in the
 app knows how the result was produced.
+
+## Project structure
+
+```
+src/
+  App.jsx          screen flow (upload → quality → results → report)
+  demoModel.js     scripted per-sample grades, confidence and findings
+  fundus.js        procedural fundus images for the demo scans
+  heatmap.js       Grad-CAM style overlay rendering
+  report.js        A4 PDF referral generation
+  components/      one component per screen, plus stepper and top bar
+```

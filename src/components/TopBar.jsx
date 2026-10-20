@@ -10,7 +10,7 @@ export default function TopBar() {
         <span className="brand-sub">Explainable AI for Diabetic Retinopathy Screening</span>
       </div>
       <div className="topbar-right">
-        <span className="demo-tag">Demo build</span>
+        <span className="demo-tag" title="Results are pre-scripted, not model output">Demo build</span>
         <span className="team-badge">
           <span className="dot" />
           MMDC Team

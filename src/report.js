@@ -26,7 +26,7 @@ export function formatDate(date = new Date()) {
 }
 
 /** Render the scan plus its saliency overlay to a JPEG data URI for the PDF. */
-export function composeScan({ image, map, overlay = true }) {
+export function composeScan({ image, map, overlay = true, opacity = 1 }) {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
@@ -37,7 +37,11 @@ export function composeScan({ image, map, overlay = true }) {
       ctx.fillStyle = '#0d0603';
       ctx.fillRect(0, 0, HEATMAP_SIZE, HEATMAP_SIZE);
       ctx.drawImage(img, 0, 0, HEATMAP_SIZE, HEATMAP_SIZE);
-      if (overlay) drawHeatmap(ctx, map);
+      if (overlay) {
+        ctx.globalAlpha = opacity;
+        drawHeatmap(ctx, map);
+        ctx.globalAlpha = 1;
+      }
       resolve(canvas.toDataURL('image/jpeg', 0.92));
     };
     // The report is still useful without the thumbnail, so never block on this.

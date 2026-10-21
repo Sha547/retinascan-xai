@@ -64,11 +64,11 @@ export default function App() {
     });
   }
 
-  async function generate(overlay = true) {
+  async function generate(overlay = true, opacity = 1) {
     setBusy(true);
     const started = performance.now();
     try {
-      captureRef.current = await composeScan({ image: scan.image, map: result.heatmap, overlay });
+      captureRef.current = await composeScan({ image: scan.image, map: result.heatmap, overlay, opacity });
       // DEMO: hardcoded for presentation, replace with real model inference API
       // call — a production build would spend this time fetching the saliency
       // map and report template from the server. Drop this to make it instant.

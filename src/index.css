@@ -1278,3 +1278,122 @@ button {
     display: none;
   }
 }
+
+/* Scan view controls */
+.seg {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 99px;
+  background: var(--canvas);
+  border: 1px solid var(--line);
+}
+
+.seg-btn {
+  padding: 5px 13px;
+  border: 0;
+  border-radius: 99px;
+  background: none;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+
+.seg-btn.active {
+  background: var(--navy);
+  color: #fff;
+}
+
+.seg-btn:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.split-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(11, 37, 69, 0.25);
+  pointer-events: none;
+}
+
+.split-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: ew-resize;
+}
+
+.opacity-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.opacity-row input {
+  flex: 1;
+  accent-color: var(--teal);
+}
+
+.opacity-row input:disabled {
+  opacity: 0.4;
+}
+
+.opacity-val {
+  width: 36px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ICDR severity scale */
+.sev-scale {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+}
+
+.sev-bar {
+  display: block;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--line);
+  transition: background 0.4s var(--ease);
+}
+
+.sev-step.reached.green .sev-bar {
+  background: var(--green);
+}
+
+.sev-step.reached.orange .sev-bar {
+  background: var(--orange);
+}
+
+.sev-step.reached.red .sev-bar {
+  background: var(--red);
+}
+
+.sev-label {
+  display: block;
+  margin-top: 6px;
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.sev-step.current .sev-label {
+  color: var(--ink);
+  font-weight: 600;
+}

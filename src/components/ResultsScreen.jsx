@@ -37,7 +37,7 @@ function ConfidenceRing({ value }) {
   );
 }
 
-function Heatmap({ map, visible }) {
+function Heatmap({ map, visible, opacity, clip }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -54,14 +54,38 @@ function Heatmap({ map, visible }) {
       className="heatmap"
       width={HEATMAP_SIZE}
       height={HEATMAP_SIZE}
-      style={{ opacity: visible ? 1 : 0 }}
+      style={{ opacity: visible ? opacity : 0, clipPath: `inset(0 0 0 ${clip}%)` }}
       aria-hidden="true"
     />
   );
 }
 
+const GRADES = ['No DR', 'Mild', 'Moderate', 'Severe', 'Proliferative'];
+
+function SeverityScale({ severity, tone }) {
+  return (
+    <ol className="sev-scale" aria-label={`ICDR severity scale, grade ${severity} of 4`}>
+      {GRADES.map((label, i) => (
+        <li key={label} className={`sev-step ${i <= severity ? `reached ${tone}` : ''} ${i === severity ? 'current' : ''}`}>
+          <span className="sev-bar" />
+          <span className="sev-label">{label}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+const VIEWS = [
+  ['overlay', 'Overlay'],
+  ['split', 'Split'],
+  ['original', 'Original'],
+];
+
 export default function ResultsScreen({ scan, result, patientId, busy, onGenerate, onReset }) {
-  const [overlay, setOverlay] = useState(true);
+  const [view, setView] = useState('overlay');
+  const [opacity, setOpacity] = useState(1);
+  const [split, setSplit] = useState(50);
+  const overlay = view !== 'original';
 
   return (
     <div className="screen">
@@ -79,23 +103,53 @@ export default function ResultsScreen({ scan, result, patientId, busy, onGenerat
                 <h3>Grad-CAM saliency overlay</h3>
                 <p>{scan.name}</p>
               </div>
-              <button
-                type="button"
-                className="switch"
-                onClick={() => setOverlay((v) => !v)}
-                aria-pressed={overlay}
-              >
-                Heatmap
-                <span className={`switch-track ${overlay ? 'on' : ''}`}>
-                  <span className="switch-knob" />
-                </span>
-              </button>
+              <div className="seg" role="group" aria-label="Scan view">
+                {VIEWS.map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={`seg-btn ${view === id ? 'active' : ''}`}
+                    aria-pressed={view === id}
+                    onClick={() => setView(id)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="scan-frame">
               <img src={scan.image} alt="Retinal fundus scan" />
-              <Heatmap map={result.heatmap} visible={overlay} />
+              <Heatmap map={result.heatmap} visible={overlay} opacity={opacity} clip={view === 'split' ? split : 0} />
+              {view === 'split' && (
+                <>
+                  <span className="split-line" style={{ left: `${split}%` }} aria-hidden="true" />
+                  <input
+                    className="split-input"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={split}
+                    onChange={(e) => setSplit(Number(e.target.value))}
+                    aria-label="Split position between original and saliency overlay"
+                  />
+                </>
+              )}
             </div>
+
+            <label className="opacity-row">
+              <span>Overlay strength</span>
+              <input
+                type="range"
+                min="0.2"
+                max="1"
+                step="0.05"
+                value={opacity}
+                disabled={!overlay}
+                onChange={(e) => setOpacity(Number(e.target.value))}
+              />
+              <span className="opacity-val">{Math.round(opacity * 100)}%</span>
+            </label>
 
             <div className="scan-legend">
               <span className="legend-scale">
@@ -141,6 +195,8 @@ export default function ResultsScreen({ scan, result, patientId, busy, onGenerat
             <ConfidenceRing value={result.confidence} />
           </div>
 
+          <SeverityScale severity={result.severity} tone={result.tone} />
+
           <div className="block">
             <div className="block-title">AI explanation</div>
             <p className="explanation">{result.explanation}</p>
@@ -171,7 +227,7 @@ export default function ResultsScreen({ scan, result, patientId, busy, onGenerat
           </div>
 
           <div className="grade-actions">
-            <button type="button" className="btn btn-teal" onClick={() => onGenerate(overlay)} disabled={busy}>
+            <button type="button" className="btn btn-teal" onClick={() => onGenerate(overlay, opacity)} disabled={busy}>
               <DocIcon />
               {busy ? 'Generating…' : 'Generate Referral Report'}
             </button>

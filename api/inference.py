@@ -11,6 +11,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import re
 from abc import ABC, abstractmethod
 from pathlib import Path
 
@@ -21,6 +22,7 @@ GRADE_LABELS = ["No DR", "Mild NPDR", "Moderate NPDR", "Severe NPDR", "Prolifera
 REFERABLE_MIN_GRADE = 2
 MOCK_NOTE = "Mock heatmap for development. Not Grad-CAM and not derived from image content."
 HEATMAP_MAX_SIDE = 1024
+SAFE_THUMB = re.compile(r"^[A-Za-z0-9_-]+\.jpg$")
 FIXTURE_CURVE = Path(__file__).resolve().parents[1] / "docs" / "fixtures" / "operating_curve.json"
 
 
@@ -88,6 +90,69 @@ class Predictor(ABC):
 
     def health(self) -> dict:
         return {"version": self.model["version"], "mock": self.model["mock"], "loaded": True}
+
+
+class RealPredictor(Predictor):
+    """Wraps ml/infer.py RetinaModel. Nothing about the model is re-implemented here.
+
+    Needs in `artifacts`: model.pt, calibration.json, train_index.npz,
+    operating_curve.json, and thumbs/ (or thumbs.zip, unpacked on first start).
+    """
+
+    REQUIRED = ("model.pt", "calibration.json", "train_index.npz", "operating_curve.json")
+
+    def __init__(self, artifacts: Path, device: str = "cpu"):
+        import threading
+        import zipfile
+
+        from infer import RetinaModel  # ml/ is on sys.path (api/__init__.py)
+
+        self.artifacts = Path(artifacts)
+        missing = [name for name in self.REQUIRED if not (self.artifacts / name).is_file()]
+        if missing:
+            raise ModelUnavailable(f"missing artifacts in {self.artifacts}: {missing}")
+        self.thumbs = self.artifacts / "thumbs"
+        zipped = self.artifacts / "thumbs.zip"
+        if not self.thumbs.is_dir() and zipped.is_file():
+            with zipfile.ZipFile(zipped) as archive:
+                names = [n for n in archive.namelist() if SAFE_THUMB.match(n)]
+                self.thumbs.mkdir()
+                for name in names:  # only flat "<id>.jpg" entries; never trust archive paths
+                    (self.thumbs / name).write_bytes(archive.read(name))
+        self._model = RetinaModel(self.artifacts, device=device)
+        self._curve = json.loads((self.artifacts / "operating_curve.json").read_text())
+        # Grad-CAM backpropagates through the shared model: one request at a time.
+        self._lock = threading.Lock()
+        self.model = self._model.model_info
+
+    def predict(self, image: np.ndarray) -> dict:
+        with self._lock:
+            out = self._model.predict(image)
+        out.pop("latency_ms", None)
+        return out
+
+    def thumbnail(self, id_code: str) -> bytes | None:
+        path = self.thumbs / f"{id_code}.jpg"
+        return path.read_bytes() if path.is_file() else None
+
+    def operating_curve(self) -> dict:
+        return self._curve
+
+
+
+
+def load_predictor(artifacts: Path) -> Predictor:
+    """PREDICTOR=real|mock. Default: real if artifacts/model.pt exists, else mock."""
+    import logging
+    import os
+
+    choice = os.environ.get("PREDICTOR", "").strip().lower()
+    if choice not in ("", "real", "mock"):
+        raise ValueError(f"PREDICTOR must be 'real' or 'mock', got {choice!r}")
+    if choice == "mock" or (choice == "" and not (Path(artifacts) / "model.pt").is_file()):
+        logging.getLogger("retinascan.api").warning("Serving the MOCK predictor (model.mock = true)")
+        return MockPredictor()
+    return RealPredictor(Path(artifacts))
 
 
 class MockPredictor(Predictor):

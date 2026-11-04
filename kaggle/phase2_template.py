@@ -88,9 +88,13 @@ def main():
     # 2. External dataset (lane B's prepare_external.py).
     ext_args = []
     if c.get("ext_dataset") and (CODE / "prepare_external.py").exists():
-        src = Path("/kaggle/input") / c["ext_dataset"].split("/")[-1]
-        if not src.exists():
-            src = next(Path("/kaggle/input").glob(f"*{c['ext_dataset'].split('/')[-1]}*"))
+        print("inputs:", sorted(str(p) for p in Path("/kaggle/input").glob("*/*"))[:20], flush=True)
+        # Mount paths vary between Kaggle versions; find IDRiD by its own label file.
+        labels = sorted(Path("/kaggle/input").rglob("*Disease Grading_Training Labels.csv"))
+        if not labels:
+            raise SystemExit("IDRiD 'Disease Grading_Training Labels.csv' not found under /kaggle/input")
+        src = labels[0].parents[1]  # .../B. Disease Grading
+        print("IDRiD root:", src, flush=True)
         sh(["prepare_external.py", "--in_dir", src, "--out_dir", EXT], log)
         ext_args = ["--ext_csv", EXT / "external.csv", "--ext_dir", EXT / "images", "--ext_name",
                     c.get("ext_name", "external"), "--ext_cache", "/tmp/rs_ext_cache"]

@@ -28,7 +28,7 @@ from common import (GRADE_LABELS, REFERABLE_MIN_GRADE, heatmap_to_original, load
 
 HEATMAP_NOTE = ("Grad-CAM: image regions that most influenced the predicted grade. "
                 "Coarse; not lesion detection.")
-HEATMAP_MAX_SIDE = 1024
+HEATMAP_MAX_SIDE = 512  # Grad-CAM is ~16x16 cells; more pixels add size, not detail (contract cap: 1024)
 
 
 def recommendation(pred: dict | None) -> str:
@@ -56,6 +56,7 @@ def _colourise(cam: np.ndarray) -> np.ndarray:
     """[0,1] heatmap -> RGBA uint8 (jet colours, alpha grows with activation)."""
     jet = cv2.applyColorMap((cam * 255).astype(np.uint8), cv2.COLORMAP_JET)  # BGR
     alpha = (np.clip((cam - 0.15) / 0.85, 0, 1) * 200).astype(np.uint8)       # weak areas transparent
+    jet[alpha == 0] = 0  # invisible pixels need no colour; keeps the PNG small
     return np.dstack([jet, alpha])  # BGRA, as cv2.imencode expects
 
 

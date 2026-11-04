@@ -23,6 +23,8 @@ STAGES = {
     # Phase 2: no training. Uses the output of kernel `from_kernel` as input.
     "phase2": {"from_kernel": "retinascan-full", "ext_dataset": "", "ext_name": "IDRiD",
                "quality_cmd": []},
+    # Grad-CAM rim audit on test images + export of chosen demo images (no training).
+    "audit": {"from_kernel": "retinascan-full", "export_ids": ""},
 }
 DEFAULTS = {"arch": "efficientnet_b0", "clahe": True, "lr": 3e-4, "workers": 4,
             "target_sens": 0.90, "target_coverage": 0.85}
@@ -63,7 +65,7 @@ def main():
             tar.add(p, arcname=p.name)
     code = base64.b64encode(buf.getvalue()).decode()
 
-    tpl_name = "phase2_template.py" if a.stage == "phase2" else "kernel_template.py"
+    tpl_name = {"phase2": "phase2_template.py", "audit": "audit_template.py"}.get(a.stage, "kernel_template.py")
     tpl = (ROOT / "kaggle" / tpl_name).read_text()
     script = (tpl.replace("__STAGE__", a.stage).replace("__CONFIG__", json.dumps(cfg))
               .replace("__CODE_B64__", code))
@@ -82,7 +84,7 @@ def main():
         "enable_internet": True,  # timm downloads ImageNet weights
         "dataset_sources": [cfg["ext_dataset"]] if cfg.get("ext_dataset") else [],
         "competition_sources": ["aptos2019-blindness-detection"],
-        "kernel_sources": [f"{username()}/{cfg['from_kernel']}"] if a.stage == "phase2" else [],
+        "kernel_sources": [f"{username()}/{cfg['from_kernel']}"] if a.stage in ("phase2", "audit") else [],
     }
     (out / "kernel-metadata.json").write_text(json.dumps(meta, indent=2))
     print(f"built {out}/run.py ({len(script) // 1024} KB) for {meta['id']} with config {cfg}")

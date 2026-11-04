@@ -35,3 +35,6 @@ kaggle.json
 .idea/
 *.log
 kaggle/kernel/
+
+# local demo inputs (APTOS images: not redistributed)
+demo_images/

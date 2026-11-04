@@ -24,7 +24,7 @@ from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, field_validator, model_validator
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from api.inference import MockPredictor, ModelUnavailable, Predictor, priority_for, recommendation_for
+from api.inference import ModelUnavailable, Predictor, load_predictor, priority_for, recommendation_for
 from api.store import CaseNotFound, DecisionNotAllowed, Store, now_iso
 from ml import quality
 
@@ -150,7 +150,7 @@ def create_app(
     uploads_dir: Path | None = None,
     thresholds: dict | None = None,
 ) -> FastAPI:
-    predictor = predictor or MockPredictor()
+    predictor = predictor or load_predictor(ARTIFACTS)
     thresholds = thresholds or load_quality_thresholds()
     store = Store(db_path or Path(os.environ.get("RETINASCAN_DB", ROOT / "api" / "retinascan.db")))
     uploads = uploads_dir or Path(os.environ.get("RETINASCAN_UPLOADS", ROOT / "api" / "uploads"))

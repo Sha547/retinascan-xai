@@ -3,7 +3,7 @@
  *
  * A real deployment would receive actual retinal images from a fundus camera at
  * the PHC. For the presentation we draw stand-in retina images as SVG so the
- * demo has no external image dependencies and works fully offline.
+ * sample illustrations have no external image dependencies.
  */
 
 const VESSELS = [
@@ -27,17 +27,8 @@ function vesselLayer() {
   ).join('');
 }
 
-function dots(list, fill, opacity) {
-  return list
-    .map(([cx, cy, r]) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" fill-opacity="${opacity}"/>`)
-    .join('');
-}
-
-/**
- * Build a fundus-style SVG as a data URI.
- * `lesions` are dark microaneurysm/haemorrhage dots, `exudates` are pale blobs.
- */
-export function fundusSvg({ lesions = [], exudates = [], base = '#a53e13', core = '#c4611f' } = {}) {
+/** Build a synthetic fundus illustration as an SVG data URI. */
+export function fundusSvg({ base = '#a53e13', core = '#c4611f' } = {}) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640" viewBox="0 0 640 640">
   <defs>
     <radialGradient id="retina" cx="52%" cy="48%" r="62%">
@@ -63,8 +54,6 @@ export function fundusSvg({ lesions = [], exudates = [], base = '#a53e13', core 
     <circle cx="470" cy="300" r="52" fill="url(#disc)"/>
     <circle cx="470" cy="300" r="22" fill="#f8d79a" fill-opacity="0.75"/>
     <circle cx="255" cy="330" r="105" fill="url(#macula)"/>
-    ${dots(lesions, '#5a0c04', 0.92)}
-    ${dots(exudates, '#fff2c4', 0.85)}
   </g>
   <circle cx="320" cy="320" r="299" fill="none" stroke="#000" stroke-opacity="0.45" stroke-width="2"/>
 </svg>`;

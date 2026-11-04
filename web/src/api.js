@@ -15,6 +15,7 @@ const copy = (value) => structuredClone(value);
 const details = new Map([graded, abstained, retake, reviewed].map(c => [c.case_id, copy(c)]));
 let summaries = copy(allFixture.cases);
 const pendingOrder = pendingFixture.cases.map(c => c.case_id);
+let reviewedOrder = summaries.filter(c => ['accepted', 'overridden'].includes(c.status)).map(c => c.case_id);
 let decisionId = Math.max(...reviewed.decisions.map(d => d.decision_id));
 export const isDemoMode = () => demo;
 export const DISCLAIMER = 'Research prototype, not clinically validated. Final decision must be made by a qualified ophthalmologist.';
@@ -71,7 +72,7 @@ export async function getCases(status = 'pending', limit = 50) {
   if (!demo) return request(`/cases?${new URLSearchParams({ status, limit })}`);
   let cases = summaries;
   if (status === 'pending') cases = pendingOrder.map(id => summaries.find(c => c.case_id === id)).filter(c => c?.status === 'pending');
-  else if (status === 'reviewed') cases = summaries.filter(c => ['accepted', 'overridden'].includes(c.status));
+  else if (status === 'reviewed') cases = reviewedOrder.map(id => summaries.find(c => c.case_id === id));
   else if (status === 'retake') cases = summaries.filter(c => c.status === 'retake');
   return copy({ cases: cases.slice(0, limit), total: cases.length });
 }
@@ -103,6 +104,7 @@ export async function postDecision(id, decision) {
   c.status = decision.action === 'accept' ? 'accepted' : 'overridden';
   c.decisions.push({ ...decision, reviewer: decision.reviewer.trim(), final_grade: c.final_grade,
     decision_id: ++decisionId, case_id: id, created_at: new Date().toISOString() });
+  reviewedOrder = [id, ...reviewedOrder.filter(caseId => caseId !== id)];
   return remember(c);
 }
 export async function getCaseImage(id) { return demo ? null : request(`/cases/${encodeURIComponent(id)}/image`, {}, true); }

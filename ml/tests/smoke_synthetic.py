@@ -88,6 +88,29 @@ def main():
         assert len(curve["points"]) == 99
         assert set(idx["id_code"]) == set(sp[sp.split == "train"].id_code), "index must be train-only"
         assert (art / "reliability.png").exists() and (art / "abstention_test.csv").exists()
+
+        # ---- Phase 2 path: reuse calibration, degradation test, serving check ----
+        import shutil
+        shutil.copy(run_dir / "best.pt", art / "model.pt")
+        cache2 = tmp / "cache2"
+        run("cache_images.py", "--splits", art / "splits.csv", "--img_dir", imgs, "--cache_dir", cache2,
+            "--size", 64, "--which", "val,test", "--workers", 2)
+        shutil.copy(art / "calibration.json", tmp / "cal_full.json")
+        run("evaluate.py", "--ckpt", art / "model.pt", "--splits", art / "splits.csv", "--cache_dir", cache2,
+            "--out", art, "--workers", 0, "--no_ci", "--calibration", tmp / "cal_full.json")
+        res2 = json.loads((art / "results.json").read_text())
+        assert res2["calibration"] == cal, "reused calibration must be identical"
+        assert abs(res2["test"]["grading"]["accuracy"] - res["test"]["grading"]["accuracy"]) < 1e-9
+        run("degrade_test.py", "--ckpt", art / "model.pt", "--calibration", art / "calibration.json",
+            "--splits", art / "splits.csv", "--img_dir", imgs, "--out", art, "--workers", 2)
+        deg = json.loads((art / "degradation.json").read_text())
+        assert len(deg["rows"]) == 10 and deg["rows"][0]["condition"] == "original"
+        # serving check: thresholds are for real models; on a 1-epoch synthetic model only parity is meaningful
+        subprocess.run([sys.executable, "check_serving.py", "--artifacts", art, "--img_dir", imgs,
+                        "--n", "15", "--out", art], cwd=ML, check=False)
+        sc = json.loads((art / "serving_check.json").read_text())
+        assert sc["prob_parity"]["max_abs_diff"] < 1e-3, f"infer.py disagrees with evaluate.py: {sc}"
+        assert sc["index_contains_val_or_test"] == 0
         print("\nSMOKE TEST PASSED (pipeline runs end to end; metrics on synthetic data are meaningless)")
 
 

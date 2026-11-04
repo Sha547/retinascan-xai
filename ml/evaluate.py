@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import hashlib
+import json
 from pathlib import Path
 
 import cv2
@@ -266,6 +267,7 @@ def main():
     ap.add_argument("--ext_cache", default="", help="cache dir for preprocessed external images")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--no_ci", action="store_true")
+    ap.add_argument("--calibration", default="", help="reuse this calibration.json (fitted on val) instead of refitting")
     args = ap.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -278,19 +280,27 @@ def main():
     # ---- 1. Fit everything on VALIDATION only --------------------------------
     lv = predict_logits(model, va.id_code, args.cache_dir, device, workers=args.workers)
     yv = va.diagnosis.values
-    temperature = fit_temperature(lv, yv)
+    if args.calibration:
+        # Reuse parameters fitted earlier on validation (e.g. adding an external set later).
+        cal = json.loads(Path(args.calibration).read_text())
+        assert cal.get("fitted_on") == "validation", "calibration must come from the validation split"
+        temperature = cal["temperature"]
+        print(f"[val] reusing calibration from {args.calibration}", flush=True)
+    else:
+        temperature = fit_temperature(lv, yv)
     pv = softmax(lv / temperature)
     prv, yrv = referable_prob(pv), yv >= REFERABLE_MIN_GRADE
-    cal = {
-        "temperature": temperature,
-        "abstain_threshold": float(np.quantile(pv.max(1), 1 - args.target_coverage)),
-        "referable_threshold": referable_threshold_for_sensitivity(prv, yrv, args.target_sens),
-        "fitted_on": "validation",
-        "abstain_rule": "abstain if max calibrated prob < abstain_threshold",
-        "referable_rule": "referable if p2+p3+p4 >= referable_threshold",
-        "target_val_coverage": args.target_coverage,
-        "target_val_sensitivity": args.target_sens,
-    }
+    if not args.calibration:
+        cal = {
+            "temperature": temperature,
+            "abstain_threshold": float(np.quantile(pv.max(1), 1 - args.target_coverage)),
+            "referable_threshold": referable_threshold_for_sensitivity(prv, yrv, args.target_sens),
+            "fitted_on": "validation",
+            "abstain_rule": "abstain if max calibrated prob < abstain_threshold",
+            "referable_rule": "referable if p2+p3+p4 >= referable_threshold",
+            "target_val_coverage": args.target_coverage,
+            "target_val_sensitivity": args.target_sens,
+        }
     save_json(cal, out / "calibration.json")
     grid = np.round(np.linspace(0.01, 0.99, 99), 2)
     save_json({"source": "validation", "n": int(len(yv)), "n_positive": int(yrv.sum()),

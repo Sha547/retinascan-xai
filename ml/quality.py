@@ -1,7 +1,8 @@
 """Image quality gate for colour fundus photographs.
 
-Only needs cv2, numpy and the standard library, so the same file runs inside
-the API and inside a Kaggle notebook.
+Only needs cv2, numpy, the standard library and ml/common.py (which must sit next
+to this file), so the same code runs inside the API and inside a Kaggle notebook.
+Using common.crop_retina means metrics are taken on the crop the model sees.
 
 Library use:
     thresholds = load_thresholds("quality_thresholds.json")
@@ -28,6 +29,8 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+
+from common import crop_retina
 
 # Images are downscaled to this longest side before masking. It only bounds cost.
 WORK_SIDE = 1024
@@ -117,20 +120,6 @@ def retina_mask(image: np.ndarray) -> np.ndarray:
     return mask
 
 
-def crop_retina(image: np.ndarray) -> np.ndarray:
-    """Local stand-in: bounding-box crop to the retina, BGR in and out.
-
-    Stays until lane-a-ml is merged into main, then switches to common.crop_retina.
-    See the Lane B notes in PROGRESS.md: that function takes RGB and returns
-    (square, box), and the thresholds must be regenerated after the switch.
-    """
-    points = cv2.findNonZero(retina_mask(image))
-    if points is None:
-        return image
-    x, y, width, height = cv2.boundingRect(points)
-    return image[y : y + height, x : x + width]
-
-
 def compute_metrics(image: np.ndarray) -> dict:
     """Quality metrics for one image. All values are plain floats.
 
@@ -141,10 +130,13 @@ def compute_metrics(image: np.ndarray) -> dict:
     if coverage < MIN_RETINA_FRACTION:
         return {"retina_found": 0.0, **{key: 0.0 for key in METRIC_KEYS}, "field_coverage": coverage}
 
-    crop = _resize_longest(crop_retina(bgr), METRIC_SIDE, upscale=True)
+    # common.crop_retina works in RGB and pads to a square. The padding is black, so
+    # retina_mask() below keeps it out of every metric.
+    square, _ = crop_retina(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB))
+    crop = _resize_longest(cv2.cvtColor(square, cv2.COLOR_RGB2BGR), METRIC_SIDE, upscale=True)
     mask = retina_mask(crop)
     rim = max(3, int(RIM_FRACTION * max(crop.shape[:2]))) | 1
-    # The crop is a bounding box, so the retina touches the array edge. erode()
+    # The retina touches the edge of the crop's bounding box. erode()
     # treats outside-the-array as foreground by default, which would keep that rim.
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (rim, rim))
     inner = cv2.erode(mask, kernel, borderType=cv2.BORDER_CONSTANT, borderValue=0) > 0

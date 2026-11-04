@@ -135,11 +135,34 @@ def test_rim_does_not_dominate_sharpness():
     assert quality.compute_metrics(smooth)["sharpness"] < 1
 
 
-def test_crop_retina_removes_black_border(clean):
-    padded = cv2.copyMakeBorder(clean, 100, 100, 300, 300, cv2.BORDER_CONSTANT)
-    cropped = quality.crop_retina(padded)
-    assert cropped.shape[0] < padded.shape[0]
-    assert cropped.shape[1] < padded.shape[1]
+def test_black_border_does_not_change_metrics(clean):
+    # Stays under WORK_SIDE, so both images are measured at the same scale.
+    padded = cv2.copyMakeBorder(clean, 100, 100, 100, 100, cv2.BORDER_CONSTANT)
+    plain, bordered = quality.compute_metrics(clean), quality.compute_metrics(padded)
+    assert bordered["field_coverage"] < plain["field_coverage"]
+    for key in ("sharpness", "brightness", "contrast"):
+        assert bordered[key] == pytest.approx(plain[key], rel=0.05)
+
+
+def test_uses_common_crop_retina():
+    import common
+
+    assert quality.crop_retina is common.crop_retina
+
+
+def test_crop_retina_gets_rgb_and_metrics_stay_bgr(monkeypatch):
+    colour = (30, 75, 170)  # BGR
+    image = np.zeros((600, 600, 3), dtype=np.uint8)
+    cv2.circle(image, (300, 300), 270, colour, -1)
+    seen = []
+    real = quality.crop_retina
+    monkeypatch.setattr(quality, "crop_retina", lambda rgb: seen.append(rgb) or real(rgb))
+
+    brightness = quality.compute_metrics(image)["brightness"]
+
+    assert np.array_equal(seen[0], image[:, :, ::-1])
+    expected = cv2.cvtColor(np.array([[colour]], dtype=np.uint8), cv2.COLOR_BGR2GRAY)[0, 0]
+    assert brightness == pytest.approx(float(expected), abs=1)
 
 
 @pytest.mark.parametrize("converted", ["gray", "bgra"])

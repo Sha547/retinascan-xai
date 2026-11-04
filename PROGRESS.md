@@ -7,7 +7,9 @@ Format: `- [YYYY-MM-DD HH:MM] DONE|RUNNING|FAILED|BLOCKED: what`
 
 - [2026-11-05] DONE: synthetic CPU smoke test passes end to end (`ml/tests/smoke_synthetic.py`). It found and fixed 2 bugs: an over-merging duplicate hash (95/153 images merged) and a pickle-only `train_index.npz`.
 - [2026-11-05] DONE: ML pipeline on branch `lane-a-ml`: `ml/common.py`, `prepare_data.py`, `train.py`, `evaluate.py`, `embed.py`, `kaggle/build_kernel.py`. Local venv at `.venv` (CPU torch, Kaggle CLI 2.2.5).
-- [2026-11-05] BLOCKED (user): Kaggle token missing, so the Kaggle smoke run and full training can't start.
+- [2026-11-05 02:20] RUNNING: full training on Kaggle (`sha547/retinascan-full`): effnet-b0, 512px, 15 epochs, bs 16, T4. Version `effnet-b0-512-exp1`.
+- [2026-11-05 02:12] DONE: Kaggle smoke run passed (300 images, T4 GPU, all artifacts produced; model.pt and the index load on local CPU). Its metrics are not results.
+- [2026-11-05 02:07] DONE: Kaggle token set up (user sha547); APTOS competition joined.
 
 - [2026-11-05] DONE: Phase 0 restructure: UI moved to `web/`; `ml/`, `api/`, `kaggle/`, `artifacts/` created; `docs/CONTRACT.md` v1 plus fake fixtures in `docs/fixtures/`; `CLAUDE.md`, `AGENTS.md`, `PLAN.md`, root `.gitignore`.
 - [2026-11-05] BLOCKED (user): Kaggle not set up yet (`~/.kaggle/kaggle.json` missing; needs phone verification plus APTOS competition rules accepted).

@@ -105,3 +105,15 @@ def test_colour_order_quality_gets_bgr_model_gets_rgb(make_client, monkeypatch):
     assert q[..., 2].mean() > q[..., 0].mean(), "quality gate must receive BGR (red in channel 2)"
     assert m[..., 0].mean() > m[..., 2].mean(), "model must receive RGB (red in channel 0)"
     assert np.array_equal(q[..., ::-1], m)
+
+
+@needs_model
+def test_similar_cases_are_not_duplicate_photos(real):
+    """APTOS has duplicate photos; the same image must not be shown twice."""
+    from api.tests.conftest import fake_fundus as ff
+    idx = {str(i): n for n, i in enumerate(real._model.index_ids)}
+    for seed in (5, 6, 7):
+        sim = real.predict(cv2.cvtColor(ff(seed), cv2.COLOR_BGR2RGB))["evidence"]["similar"]
+        e = real._model.index_emb[[idx[s["id_code"]] for s in sim]]
+        pair = e @ e.T
+        assert (pair[~np.eye(3, dtype=bool)] < 0.99).all()

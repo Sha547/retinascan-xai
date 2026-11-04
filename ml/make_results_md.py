@@ -135,6 +135,56 @@ def main():
               f"- A training image retrieves itself as top similar case: {pct(S['self_retrieval_top1']['rate'])}.",
               f"- Validation/test images in the similar-case index: {S['index_contains_val_or_test']}.", ""]
 
+    if (A / "degradation.json").exists():
+        D = json.loads((A / "degradation.json").read_text())
+        rows = {r["condition"]: r for r in D["rows"]}
+        base = rows.get("original")
+        if base and "quality_reject_rate" in base:
+            missed = [c for c, r in rows.items() if c != "original" and r["accuracy"] < base["accuracy"] - 0.10
+                      and r.get("quality_reject_rate", 1) < 0.5]
+            strict = [c for c, r in rows.items() if c != "original" and r["accuracy"] >= base["accuracy"] - 0.02
+                      and r.get("quality_reject_rate", 0) > 0.5]
+            silent = [c for c, r in rows.items() if c != "original" and r["accuracy"] < base["accuracy"] - 0.30
+                      and r["abstention_rate"] < 0.20]
+            L += ["### What the degradation test shows (computed from the degradation table)", ""]
+            if silent:
+                L += [f"- Abstention alone does not catch: {', '.join(silent)} (accuracy falls by more than 0.30 "
+                      "while fewer than 20% of cases abstain). The quality gate must run first."]
+            if missed:
+                L += [f"- The quality gate misses: {', '.join(missed)} (accuracy falls by more than 0.10 but the "
+                      "gate rejects fewer than half of the images)."]
+            if strict:
+                L += [f"- The quality gate is stricter than needed for: {', '.join(strict)} (accuracy within 0.02 "
+                      "of the original, yet the gate rejects most images, causing avoidable retakes)."]
+            L += [""]
+
+    if (A / "quality_thresholds.json").exists():
+        Q = json.loads((A / "quality_thresholds.json").read_text())
+        if Q.get("derived_from_data"):
+            L += ["## Quality gate thresholds", "",
+                  f"Derived from {Q['n_train_used']} training-split images only ({Q['low_percentile']}th / "
+                  f"{Q['high_percentile']}th percentiles). On those training images the gate rejects "
+                  f"{pct(Q['train_reject_rate'])}.", "",
+                  table([["sharpness (min)", f"{Q['sharpness_min']:.2f}"], ["brightness (min / max)",
+                         f"{Q['brightness_min']:.1f} / {Q['brightness_max']:.1f}"],
+                         ["contrast (min)", f"{Q['contrast_min']:.2f}"],
+                         ["field coverage (min)", f3(Q["coverage_min"])], ["glare fraction (max)", f"{Q['glare_max']:.4f}"]],
+                        head=("metric", "threshold")), ""]
+
+    if (A / "cam_audit.json").exists():
+        C = json.loads((A / "cam_audit.json").read_text())
+        al = C["all"]
+        L += [f"## Where Grad-CAM points ({C['split']} split, n = {al['n']})", "",
+              f"Rim = the outer {int(100 * C['rim_fraction_of_radius'])}% of the retina radius. If the heatmap "
+              "were spread evenly, the rim's share of heatmap weight would equal its share of the area "
+              "(ratio 1.0). Higher means the model leans on the image border.", "",
+              table([[g, x["n"], f"{x['rim_share_over_area']:.2f}", pct(x["outside_share_mean"]),
+                      pct(x["peak_on_rim_rate"])] for g, x in [("All", al), *C["by_true_grade"].items()]],
+                    head=("true grade", "n", "rim weight / rim area", "weight outside retina", "peak on rim")), "",
+              "Peripheral lesions are common in advanced DR, so a higher rim share for severe and proliferative "
+              "cases is not by itself evidence of a shortcut, but it is also not evidence against one. "
+              "Treat the heatmap as a coarse hint.", ""]
+
     L += ["## Limitations (read before quoting any number)", "",
           "- **Image-level split.** APTOS has no patient IDs, so two photos of the same patient (e.g. both eyes) can "
           "fall in different splits. Near-duplicate images are grouped, but this does not remove same-patient leakage; "
@@ -143,12 +193,20 @@ def main():
           "clinics using a variety of cameras. Images from rural primary health centres may differ and be worse. "
           "See the external and degradation sections.",
           "- **Label noise.** APTOS grades come from single clinicians; conflicting duplicate labels were found (see Data).",
+          *([f"- **Operating point does not transfer.** The referable threshold fixed on APTOS validation gives "
+             f"sensitivity {f3(ext['referable']['sensitivity'])} on {ext['split']} vs {f3(t['referable']['sensitivity'])} "
+             f"on APTOS test, while AUC stays {f3(ext['referable']['auc'])}. A new site would need its own "
+             "threshold, set on its own labelled validation data, before use."] if ext else []),
           "- **Weak classes.** Mild and severe NPDR are the least accurate grades (see the confusion matrix). "
           "The referable decision is more reliable than the exact grade.",
           "- **Grad-CAM is coarse.** It shows regions that influenced the grade, at about 32 px resolution. It is "
           "not lesion detection or segmentation.",
           "- **Calibration** is fitted on one validation split of about 550 images; ECE is noisy at this size.",
           "- **Not clinically validated.** No prospective study, no clinician-reviewed pilot, no regulatory review.", ""]
+    L += ["## Data attribution", "",
+          "- APTOS 2019 Blindness Detection (Kaggle competition data, used under the competition rules).",
+          "- IDRiD: Porwal et al., \"Indian Diabetic Retinopathy Image Dataset (IDRiD)\", IEEE DataPort, 2018, "
+          "doi:10.21227/H25W98; Porwal et al., Data 3(3):25, 2018, doi:10.3390/data3030025. CC BY 4.0.", ""]
     Path(a.out).write_text("\n".join(L))
     print(f"wrote {a.out}")
 

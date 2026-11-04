@@ -1,0 +1,55 @@
+{
+  "split": "test",
+  "rim_fraction_of_radius": 0.15,
+  "note": "Grad-CAM for the predicted grade, in model-input space; measurement only",
+  "all": {
+    "n": 546,
+    "rim_share_mean": 0.16630917717958546,
+    "rim_area_mean": 0.2527842996046314,
+    "rim_share_over_area": 0.65790944073545,
+    "outside_share_mean": 0.04623890553785304,
+    "peak_on_rim_rate": 0.1575091575091575
+  },
+  "by_true_grade": {
+    "No DR": {
+      "n": 261,
+      "rim_share_mean": 0.16144601809453232,
+      "rim_area_mean": 0.26514291081851704,
+      "rim_share_over_area": 0.6089018846332181,
+      "outside_share_mean": 0.028151625840500055,
+      "peak_on_rim_rate": 0.09195402298850575
+    },
+    "Mild NPDR": {
+      "n": 60,
+      "rim_share_mean": 0.14507422478248674,
+      "rim_area_mean": 0.24037235616697886,
+      "rim_share_over_area": 0.6035395546137943,
+      "outside_share_mean": 0.05680171255177508,
+      "peak_on_rim_rate": 0.1
+    },
+    "Moderate NPDR": {
+      "n": 151,
+      "rim_share_mean": 0.1502945095251333,
+      "rim_area_mean": 0.24089151692596897,
+      "rim_share_over_area": 0.6239095151338266,
+      "outside_share_mean": 0.06304716708027566,
+      "peak_on_rim_rate": 0.2052980132450331
+    },
+    "Severe NPDR": {
+      "n": 28,
+      "rim_share_mean": 0.20579702699823038,
+      "rim_area_mean": 0.24146258966052586,
+      "rim_share_over_area": 0.8522936297815824,
+      "outside_share_mean": 0.05440198803054435,
+      "peak_on_rim_rate": 0.25
+    },
+    "Proliferative DR": {
+      "n": 46,
+      "rim_share_mean": 0.2501338877431724,
+      "rim_area_mean": 0.24478293313393498,
+      "rim_share_over_area": 1.0218599987373695,
+      "outside_share_mean": 0.07494320504812767,
+      "peak_on_rim_rate": 0.391304347826087
+    }
+  }
+}

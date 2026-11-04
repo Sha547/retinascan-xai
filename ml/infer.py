@@ -133,7 +133,7 @@ class RetinaModel:
                 emb = self.model.forward_head(feats.detach(), pre_logits=True)
                 emb = torch.nn.functional.normalize(emb.float(), dim=1)[0].cpu().numpy()
             sims = self.index_emb @ emb
-            top = np.argsort(-sims)[:k]
+            top = self._distinct_top(sims, k)
             out["evidence"] = {
                 "heatmap_png": _png_data_uri(_colourise(full)),
                 "heatmap_note": HEATMAP_NOTE,
@@ -144,6 +144,20 @@ class RetinaModel:
             }
         out["latency_ms"] = round((time.perf_counter() - t0) * 1000)
         return out
+
+    def _distinct_top(self, sims: np.ndarray, k: int, dup_sim: float = 0.99) -> list[int]:
+        """Top-k most similar training images, skipping near-identical copies.
+
+        APTOS contains duplicate photos; without this the same image can be shown
+        twice as two 'similar cases'.
+        """
+        picked: list[int] = []
+        for i in np.argsort(-sims)[: k * 20]:
+            if all(float(self.index_emb[i] @ self.index_emb[j]) < dup_sim for j in picked):
+                picked.append(int(i))
+                if len(picked) == k:
+                    break
+        return picked
 
 
 if __name__ == "__main__":

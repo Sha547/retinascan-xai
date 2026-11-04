@@ -146,6 +146,8 @@ files = {
     "analyse_abstained.json": abstained,
     "analyse_retake.json": retake,
     "case_reviewed.json": reviewed,
+    "case_severe.json": severe,
+    "case_healthy.json": healthy,
     "cases_pending.json": {"cases": [summary(c) for c in pending], "total": len(pending)},
     "cases_all.json": {"cases": [summary(c) for c in sorted(
         [graded, abstained, retake, severe, healthy, reviewed],

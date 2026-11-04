@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-11-04T20:56:55+00:00",
-  "code_digest": "0d17e21fa36a",
+  "generated_at": "2026-11-04T22:25:54+00:00",
+  "code_digest": "1cf740fcf046",
   "model": {
     "version": "effnet-b0-512-exp1",
     "arch": "efficientnet_b0",
@@ -223,6 +223,121 @@
       ]
     }
   },
-  "external": null,
-  "external_drop": null
+  "external": {
+    "split": "IDRiD",
+    "n": 516,
+    "class_counts": {
+      "No DR": 168,
+      "Mild NPDR": 25,
+      "Moderate NPDR": 168,
+      "Severe NPDR": 93,
+      "Proliferative DR": 62
+    },
+    "grading": {
+      "accuracy": 0.5096899224806202,
+      "qwk": 0.7383994248105746,
+      "confusion_matrix": [
+        [
+          111,
+          48,
+          4,
+          3,
+          2
+        ],
+        [
+          9,
+          16,
+          0,
+          0,
+          0
+        ],
+        [
+          6,
+          65,
+          87,
+          10,
+          0
+        ],
+        [
+          1,
+          2,
+          52,
+          34,
+          4
+        ],
+        [
+          0,
+          4,
+          19,
+          24,
+          15
+        ]
+      ],
+      "confusion_matrix_note": "rows = true grade 0..4, columns = predicted grade 0..4"
+    },
+    "referable": {
+      "definition": "grade >= 2",
+      "n_positive": 323,
+      "auc": 0.9383692391600763,
+      "threshold": 0.6078386902809143,
+      "tp": 234,
+      "fp": 7,
+      "tn": 186,
+      "fn": 89,
+      "sensitivity": 0.7244582043343654,
+      "specificity": 0.9637305699481865,
+      "ppv": 0.970954356846473,
+      "npv": 0.6763636363636364,
+      "referral_rate": 0.46705426356589147
+    },
+    "calibration": {
+      "ece_before": 0.3275968988620958,
+      "ece_after": 0.1851378727213357,
+      "nll_before": 1.993390679359436,
+      "nll_after": 1.2932391166687012,
+      "ece_bins": 15
+    },
+    "abstention": {
+      "threshold": 0.5323888063430786,
+      "abstention_rate": 0.25387596899224807,
+      "n_graded": 385,
+      "accuracy_overall": 0.5096899224806202,
+      "accuracy_graded": 0.5532467532467532,
+      "qwk_overall": 0.7383994248105746,
+      "qwk_graded": 0.7715675803963451,
+      "referable_sensitivity_graded": 0.7077625570776256
+    },
+    "bootstrap_95ci": {
+      "qwk": [
+        0.692613896914595,
+        0.7807336691746013
+      ],
+      "sensitivity": [
+        0.6749821428571429,
+        0.7701963829009865
+      ],
+      "specificity": [
+        0.9358242441891248,
+        0.9850746268656716
+      ],
+      "auc": [
+        0.9185450632476843,
+        0.9561458237678574
+      ],
+      "accuracy": [
+        0.4689922480620155,
+        0.5523255813953488
+      ]
+    },
+    "n_failed_images": 0
+  },
+  "external_drop": {
+    "note": "test minus external; positive = worse on external",
+    "qwk": 0.15221125585259287,
+    "accuracy": 0.29800238521168754,
+    "referable_auc": 0.03800320805349233,
+    "referable_sensitivity": 0.19998624011007904,
+    "referable_specificity": -0.0478427194808968,
+    "ece_after": 0.14524094639383292
+  }
 }

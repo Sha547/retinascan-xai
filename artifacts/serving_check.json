@@ -1,0 +1,14 @@
+{
+  "prob_parity": {
+    "n": 60,
+    "max_abs_diff": 0.004683239999999977,
+    "median_abs_diff": 0.0012723949999999956,
+    "argmax_agreement": 1.0
+  },
+  "self_retrieval_top1": {
+    "n": 60,
+    "rate": 0.9666666666666667
+  },
+  "index_contains_val_or_test": 0,
+  "passed": true
+}

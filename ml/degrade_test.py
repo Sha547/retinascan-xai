@@ -65,7 +65,8 @@ def _work(item):
         x, _ = preprocess(im, _A.size, clahe=_A.clahe)
         q_ok = None
         if _quality is not None:
-            q_ok = bool(_quality.check(im, _thr)["ok"])
+            # quality.check() expects BGR (OpenCV order); `im` is RGB here.
+            q_ok = bool(_quality.check(cv2.cvtColor(im, cv2.COLOR_RGB2BGR), _thr)["ok"])
         out[name] = (to_tensor_array(x), q_ok)
     return id_code, out
 

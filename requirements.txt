@@ -1,0 +1,18 @@
+# Backend + ML inference (CPU). Install with:
+#   python3 -m venv .venv && .venv/bin/pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+torch
+torchvision
+timm
+numpy
+pandas
+scikit-learn
+opencv-python-headless
+pillow
+fastapi
+uvicorn[standard]
+python-multipart
+# tests and tooling
+pytest
+httpx
+kaggle
+matplotlib

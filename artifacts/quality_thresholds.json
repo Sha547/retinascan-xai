@@ -1,0 +1,16 @@
+{
+  "derived_from_data": true,
+  "source": "train split only",
+  "low_percentile": 1.0,
+  "high_percentile": 99.0,
+  "n_train_rows": 2563,
+  "n_train_used": 2563,
+  "sharpness_min": 6.513402579718933,
+  "brightness_min": 38.775140515405674,
+  "brightness_max": 131.6355759498339,
+  "contrast_min": 7.8945840229087665,
+  "coverage_min": 0.47513048807779945,
+  "glare_max": 0.004236437379769224,
+  "train_reject_rate": 0.053062817011314864,
+  "n_unreadable_all_splits": 0
+}

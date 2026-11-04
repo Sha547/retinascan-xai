@@ -60,7 +60,10 @@ def _init(args):
 
 
 def group_duplicates(hashes: np.ndarray, max_dist: int) -> np.ndarray:
-    """Union-find over pairs with Hamming distance <= max_dist. Returns group ids."""
+    """Union-find over pairs with Hamming distance <= max_dist. Returns group ids.
+
+    hashes: (n, n_bytes) uint8 packed bit hashes.
+    """
     n = len(hashes)
     parent = np.arange(n)
 
@@ -70,11 +73,9 @@ def group_duplicates(hashes: np.ndarray, max_dist: int) -> np.ndarray:
             i = parent[i]
         return i
 
-    h = hashes.astype(np.uint64)
     for i in range(n):
-        x = np.bitwise_xor(h[i], h[i + 1:])
-        # popcount of uint64 via byte view
-        d = np.unpackbits(x.view(np.uint8).reshape(-1, 8), axis=1).sum(axis=1)
+        x = np.bitwise_xor(hashes[i], hashes[i + 1:])
+        d = np.unpackbits(x, axis=1).sum(axis=1)
         for j in np.nonzero(d <= max_dist)[0]:
             a, b = find(i), find(i + 1 + int(j))
             if a != b:
@@ -92,7 +93,8 @@ def main():
     ap.add_argument("--out_dir", required=True)
     ap.add_argument("--size", type=int, default=512)
     ap.add_argument("--no_clahe", action="store_true")
-    ap.add_argument("--dup_dist", type=int, default=4, help="max dHash Hamming distance for duplicates")
+    ap.add_argument("--dup_dist", type=int, default=20,
+                    help="max Hamming distance (of 256 bits) between dHashes to call two images duplicates")
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--limit", type=int, default=0, help="use only the first N rows (smoke test)")
@@ -128,10 +130,15 @@ def main():
                 print(f"  preprocessed {k}/{len(items)}", flush=True)
 
     good = df[df["id_code"].isin(hashes)].reset_index(drop=True)
-    hv = np.array([hashes[i] for i in good["id_code"]], dtype=np.uint64)
+    hv = np.stack([hashes[i] for i in good["id_code"]])
     good["dup_group"] = group_duplicates(hv, args.dup_dist)
 
     sizes = good.groupby("dup_group")["id_code"].transform("size")
+    largest = int(sizes.max())
+    print(f"largest duplicate group: {largest} images", flush=True)
+    if largest > max(10, 0.02 * len(good)):
+        raise SystemExit(f"a duplicate group has {largest} images: the hash threshold (--dup_dist "
+                         f"{args.dup_dist}) is merging unrelated images. Lower it and rerun.")
     dup_groups = good[sizes > 1].groupby("dup_group")
     conflicts = [g for g, d in dup_groups if d["diagnosis"].nunique() > 1]
 

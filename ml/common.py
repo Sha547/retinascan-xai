@@ -110,12 +110,19 @@ def heatmap_to_original(cam: np.ndarray, box, orig_hw) -> np.ndarray:
     return out
 
 
-def dhash(img: np.ndarray, hash_size: int = 8) -> int:
-    """64-bit difference hash of an image (used to find near-duplicates)."""
+def dhash(img: np.ndarray, hash_size: int = 16, centre: float = 0.6) -> np.ndarray:
+    """Difference hash of the retina's centre, as packed bits (hash_size**2 bits).
+
+    Only the central `centre` fraction of the (square, preprocessed) image is
+    hashed: the round retina edge on a black background is shared by every
+    fundus photo and would make unrelated images look like duplicates.
+    """
     gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY) if img.ndim == 3 else img
-    small = cv2.resize(gray, (hash_size + 1, hash_size), interpolation=cv2.INTER_AREA)
-    bits = (small[:, 1:] > small[:, :-1]).flatten()
-    return int(sum(1 << i for i, b in enumerate(bits) if b))
+    h, w = gray.shape
+    mh, mw = int(h * (1 - centre) / 2), int(w * (1 - centre) / 2)
+    core = gray[mh:h - mh, mw:w - mw]
+    small = cv2.resize(core, (hash_size + 1, hash_size), interpolation=cv2.INTER_AREA)
+    return np.packbits((small[:, 1:] > small[:, :-1]).flatten())
 
 
 # ------------------------------------------------------------------- utilities

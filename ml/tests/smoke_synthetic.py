@@ -28,7 +28,7 @@ def fake_fundus(rng, grade, size=200):
         cv2.circle(img, (int(cx + d * np.cos(a)), int(cy + d * np.sin(a))), int(rng.integers(2, 5)),
                    (90, 20, 10), -1)
     noise = rng.integers(0, 40, img.shape, dtype=np.uint8)
-    return cv2.add(img, noise)
+    return cv2.GaussianBlur(cv2.add(img, noise), (0, 0), 1.0)  # real photos are smooth, not per-pixel noise
 
 
 def run(*args):

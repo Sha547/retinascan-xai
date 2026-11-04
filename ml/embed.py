@@ -52,7 +52,8 @@ def main():
     out = Path(args.out)
     (out / "thumbs").mkdir(parents=True, exist_ok=True)
     np.savez_compressed(out / "train_index.npz", emb=emb.astype(np.float16),
-                        id_code=tr.id_code.values.astype(str), grade=tr.diagnosis.values.astype(np.int8))
+                        id_code=np.array(tr.id_code.tolist(), dtype="U"),  # unicode, loads without pickle
+                        grade=tr.diagnosis.values.astype(np.int8))
     for id_code in tr.id_code:
         img = cv2.imread(str(Path(args.cache_dir) / f"{id_code}.png"))
         cv2.imwrite(str(out / "thumbs" / f"{id_code}.jpg"),

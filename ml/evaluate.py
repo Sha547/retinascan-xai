@@ -218,10 +218,10 @@ def coverage_table(conf_val, logits, y, temperature):
     for c in COVERAGES:
         t = float(np.quantile(conf_val, 1 - c)) if c < 1 else 0.0
         m = conf >= t
-        rows.append({"target_val_coverage": c, "threshold_from_val": round(t, 4),
-                     "abstention_rate": round(float(1 - m.mean()), 4), "n_graded": int(m.sum()),
-                     "accuracy_graded": round(float((pred[m] == y[m]).mean()), 4) if m.any() else None,
-                     "qwk_graded": round(qwk(y[m], pred[m]), 4) if m.sum() > 1 else None})
+        rows.append({"target_val_coverage": c, "threshold_from_val": t,
+                     "abstention_rate": float(1 - m.mean()), "n_graded": int(m.sum()),
+                     "accuracy_graded": float((pred[m] == y[m]).mean()) if m.any() else None,
+                     "qwk_graded": qwk(y[m], pred[m]) if m.sum() > 1 else None})
     return pd.DataFrame(rows)
 
 

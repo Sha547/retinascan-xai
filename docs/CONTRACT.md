@@ -13,7 +13,7 @@ Example payloads for every response live in `docs/fixtures/`. They are
 **fake** (`model.mock = true`) and exist so the frontend can be built without a
 running backend.
 
-Contract version: **1** (bump this when a breaking change is made).
+Contract version: **1.1** (1.1: heatmap size cap; `ml/infer.py` serving API. Non-breaking.)
 
 ---
 
@@ -199,8 +199,9 @@ operating-point slider.
 ```
 
 - `status`: `pending` | `retake` | `accepted` | `overridden`.
-- `heatmap_png` is a PNG data URI, the **same size and alignment as the
-  uploaded image** (the backend resizes it back), with alpha, ready to overlay.
+- `heatmap_png` is a PNG data URI with alpha, ready to overlay. It has the **same
+  aspect ratio and alignment as the uploaded image**, with its longest side capped
+  at 1024 px; scale it to the displayed image size. (Contract v1.1)
 - `similar` has exactly 3 items when a prediction exists. All are training-split images.
 - `decisions`: list of `Decision`, oldest first.
 
@@ -295,3 +296,18 @@ referable decision.
 `ml/common.py` is the single implementation: `crop_retina` → resize to `img_size`
 → (optional CLAHE, flag in `model.pt["preprocess"]`) → ImageNet normalisation.
 Lane B must import it, not re-implement it.
+
+### Serving: `ml/infer.py` (lane A provides, lane B wraps)
+
+```python
+from infer import RetinaModel, recommendation, priority
+m = RetinaModel("artifacts")          # needs model.pt, calibration.json, train_index.npz
+out = m.predict(rgb_uint8_array)      # run ml/quality.py first; only call this if quality is ok
+# out = {"prediction", "recommendation", "priority", "evidence", "model", "latency_ms"}
+```
+
+`prediction`, `recommendation`, `priority`, `evidence` and `model` are already in
+the shapes in section 3; the backend adds case_id, patient_id, eye, created_at,
+status, image_url, quality, final_grade, decisions and disclaimer. Use
+`recommendation(None)` and `priority(None)` for quality failures. Do not
+re-implement calibration, thresholds, Grad-CAM or retrieval in `api/`.

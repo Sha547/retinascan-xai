@@ -34,3 +34,4 @@ kaggle.json
 .vscode/
 .idea/
 *.log
+kaggle/kernel/

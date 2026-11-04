@@ -1,0 +1,9 @@
+{
+  "status": "ok",
+  "contract_version": 1,
+  "model": {
+    "version": "mock-0",
+    "mock": true,
+    "loaded": true
+  }
+}

@@ -1,244 +1,183 @@
-/*
- * Client-side PDF referral report — no server involved.
- *
- * The scan thumbnail is composited in a canvas from the same image and the same
- * `drawHeatmap` routine the results screen uses, so the embedded picture is
- * identical to what was on screen.
- */
-
 import { jsPDF } from 'jspdf';
-import { drawHeatmap, HEATMAP_SIZE } from './heatmap.js';
+import { DISCLAIMER, GRADE_LABELS, percent } from './api.js';
 
 const NAVY = [11, 37, 69];
 const TEAL = [13, 148, 136];
 const INK = [30, 41, 59];
-const MUTED = [100, 116, 139];
-const HAIRLINE = [214, 222, 232];
-
-const TONE_RGB = {
-  green: [22, 128, 91],
-  orange: [194, 100, 12],
-  red: [190, 46, 42],
-};
-
+const MUTED = [80, 98, 120];
 export function formatDate(date = new Date()) {
-  return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  return new Date(date).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 }
-
-/** Render the scan plus its saliency overlay to a JPEG data URI for the PDF. */
-export function composeScan({ image, map, overlay = true, opacity = 1 }) {
-  return new Promise((resolve) => {
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = HEATMAP_SIZE;
-      canvas.height = HEATMAP_SIZE;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#0d0603';
-      ctx.fillRect(0, 0, HEATMAP_SIZE, HEATMAP_SIZE);
-      ctx.drawImage(img, 0, 0, HEATMAP_SIZE, HEATMAP_SIZE);
-      if (overlay) {
-        ctx.globalAlpha = opacity;
-        drawHeatmap(ctx, map);
-        ctx.globalAlpha = 1;
-      }
-      resolve(canvas.toDataURL('image/jpeg', 0.92));
-    };
-    // The report is still useful without the thumbnail, so never block on this.
-    img.onerror = () => resolve(null);
-    img.src = image;
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Could not load an image for the report.'));
+    img.src = src;
   });
 }
-
-export async function generateReport({ result, patientId, scanImage, fileName }) {
-  const scan = scanImage;
+/** The original and PNG overlay share aspect ratio and alignment; never crop either. */
+export async function composeScan({ image, heatmap, overlay = false, opacity = 1, split = 0 }) {
+  const img = await loadImage(image);
+  const scale = Math.min(1, 1200 / Math.max(img.naturalWidth, img.naturalHeight));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+  canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#0d0603';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  if (overlay && heatmap) {
+    const map = await loadImage(heatmap);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect((canvas.width * split) / 100, 0, canvas.width * (1 - split / 100), canvas.height);
+    ctx.clip();
+    ctx.globalAlpha = opacity;
+    ctx.drawImage(map, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }
+  return { data: canvas.toDataURL('image/jpeg', 0.9), width: canvas.width, height: canvas.height };
+}
+export async function generateReport({ result, scanImage, similarImages = [], mock = false }) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  const pageW = 210;
-  const M = 16;
-  const tone = TONE_RGB[result.tone] ?? INK;
-
-  // ---- Header band -------------------------------------------------------
-  doc.setFillColor(...NAVY);
-  doc.rect(0, 0, pageW, 30, 'F');
-  doc.setFillColor(...TEAL);
-  doc.rect(0, 30, pageW, 1.2, 'F');
-
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
-  doc.text('RetinaScan XAI', M, 15);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9.5);
-  doc.setTextColor(186, 208, 224);
-  doc.text('Diabetic Retinopathy Screening Report', M, 21.5);
-  doc.setFontSize(8);
-  doc.text('MMDC Team', pageW - M, 15, { align: 'right' });
-  doc.text('Explainable AI Screening', pageW - M, 20, { align: 'right' });
-
-  // ---- Patient / scan metadata ------------------------------------------
-  let y = 44;
-  const meta = [
-    ['Patient ID', patientId],
-    ['Report date', formatDate()],
-    ['Source image', fileName || 'Demo sample scan'],
-    ['Screening site', 'Primary Health Centre — Teleophthalmology Unit'],
-  ];
-  doc.setFontSize(8);
-  meta.forEach(([label, value], i) => {
-    const col = i % 2;
-    const row = Math.floor(i / 2);
-    const x = M + col * 92;
-    const ly = y + row * 11;
-    doc.setTextColor(...MUTED);
-    doc.setFont('helvetica', 'normal');
-    doc.text(label.toUpperCase(), x, ly);
-    doc.setTextColor(...INK);
+  const p = result.prediction;
+  const margin = 16;
+  const width = 178;
+  let y;
+  function header() {
+    doc.setFillColor(...NAVY);
+    doc.rect(0, 0, 210, 28, 'F');
+    doc.setFillColor(...TEAL);
+    doc.rect(0, 28, 210, 1, 'F');
+    doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text(String(value), x, ly + 5);
-    doc.setFontSize(8);
-  });
-
-  y += 20;
-  doc.setDrawColor(...HAIRLINE);
-  doc.setLineWidth(0.3);
-  doc.line(M, y, pageW - M, y);
-
-  // ---- Scan + Grad-CAM overlay ------------------------------------------
-  y += 9;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10.5);
-  doc.setTextColor(...NAVY);
-  doc.text('Retinal scan with Grad-CAM saliency overlay', M, y);
-
-  y += 4;
-  const imgSize = 72;
-  if (scan) {
-    doc.addImage(scan, 'JPEG', M, y, imgSize, imgSize);
-  } else {
-    doc.setFillColor(240, 244, 248);
-    doc.rect(M, y, imgSize, imgSize, 'F');
+    doc.setFontSize(15);
+    doc.text('RetinaScan XAI', margin, 13);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text('Diabetic Retinopathy Screening Report', margin, 21);
+    y = 38;
+    if (mock || result.model.mock) {
+      doc.setTextColor(140, 48, 22);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('Mock model: outputs are not real predictions.', margin, y);
+      y += 10;
+    }
+  }
+  function ensure(height) {
+    if (y + height > 267) {
+      doc.addPage();
+      header();
+    }
+  }
+  function text(value, { bold = false, size = 10, color = INK } = {}) {
+    doc.setFont('helvetica', bold ? 'bold' : 'normal');
+    doc.setFontSize(size);
+    doc.setTextColor(...color);
+    const lines = doc.splitTextToSize(String(value), width);
+    for (const line of lines) {
+      ensure(6);
+      doc.setFont('helvetica', bold ? 'bold' : 'normal');
+      doc.setFontSize(size);
+      doc.setTextColor(...color);
+      doc.text(line, margin, y);
+      y += 5;
+    }
+    y += 2;
+  }
+  function heading(value) {
+    ensure(15);
+    y += 3;
+    text(value, { bold: true, size: 11, color: NAVY });
+  }
+  function picture(image, x, top, w, h) {
+    if (image) {
+      const scale = Math.min(w / image.width, h / image.height);
+      const iw = image.width * scale,
+        ih = image.height * scale;
+      doc.addImage(image.data, 'JPEG', x + (w - iw) / 2, top + (h - ih) / 2, iw, ih);
+    } else {
+      doc.setFillColor(240, 244, 248);
+      doc.rect(x, top, w, h, 'F');
+      doc.setTextColor(...MUTED);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text('Image unavailable', x + w / 2, top + h / 2, { align: 'center' });
+    }
+  }
+  header();
+  text(`Patient ID: ${result.patient_id}`, { bold: true });
+  text(`Case ID: ${result.case_id}`);
+  text(`Screening date: ${new Date(result.created_at).toISOString()} | Eye: ${result.eye}`);
+  text(`Model version: ${result.model.version} | Status: ${result.status}`);
+  heading('Model screening output');
+  if (!p) text('No grade: image quality failed.', { bold: true });
+  else {
+    if (p.abstained) text('Not confident: routed to doctor for review', { bold: true, size: 12 });
+    text(`${p.abstained ? "Model's tentative grade" : 'Grade'}: ${p.grade} - ${p.grade_label}`, {
+      size: p.abstained ? 9 : 11,
+      bold: !p.abstained,
+    });
+    text(
+      `Calibrated confidence: ${percent(p.confidence)} | Abstained: ${p.abstained ? 'Yes' : 'No'}`,
+    );
+    text(`Referable decision: ${p.referable ? 'Referable' : 'Not referable'}`);
+    if (p.referable_prob != null) text(`Referable probability: ${percent(p.referable_prob)}`);
+  }
+  heading('Recommendation');
+  text(result.recommendation ?? 'Recommendation unavailable in this summary-only fixture.');
+  heading('Scan with heatmap');
+  ensure(78);
+  picture(scanImage, margin, y, 90, 70);
+  y += 74;
+  text(result.evidence?.heatmap_note ?? 'Heatmap unavailable in this fixture.', { size: 9 });
+  if (result.fixturePartial)
+    text('Summary-only fixture: full evidence and recommendation are unavailable.', { size: 9 });
+  heading('Similar cases from the training set');
+  const similar = result.evidence?.similar ?? [];
+  if (!similar.length) text('Similar-case evidence unavailable in this fixture.');
+  else {
+    ensure(79);
+    const top = y;
+    similar.forEach((item, index) => {
+      const x = margin + index * 61;
+      picture(similarImages[index], x, top, 55, 45);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...INK);
+      doc.setFontSize(8);
+      const label = doc.splitTextToSize(`Known grade ${item.grade}: ${item.grade_label}`, 55);
+      doc.text(label, x, top + 50);
+      doc.text(`Distance: ${item.distance}`, x, top + 50 + label.length * 4);
+    });
+    y += 78;
+  }
+  heading('Reviewer decision history');
+  if (!result.decisions.length) text('No reviewer decision recorded.');
+  else {
+    text(`Current final grade: ${result.final_grade} - ${GRADE_LABELS[result.final_grade]}`, {
+      bold: true,
+    });
+    for (const d of result.decisions) {
+      text(
+        `${d.created_at} | ${d.reviewer} | ${d.action} | Final grade ${d.final_grade} (${GRADE_LABELS[d.final_grade]})`,
+      );
+      if (d.note) text(d.note);
+    }
+  }
+  for (let page = 1; page <= doc.getNumberOfPages(); page++) {
+    doc.setPage(page);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(...MUTED);
-    doc.text('Scan image unavailable', M + imgSize / 2, y + imgSize / 2, { align: 'center' });
+    doc.text(doc.splitTextToSize(DISCLAIMER, width), margin, 278);
+    doc.text(`Page ${page} of ${doc.getNumberOfPages()}`, 194, 292, { align: 'right' });
   }
-  doc.setDrawColor(...HAIRLINE);
-  doc.rect(M, y, imgSize, imgSize);
-
-  // ---- Grade + confidence panel -----------------------------------------
-  const px = M + imgSize + 10;
-  const pw = pageW - M - px;
-  let py = y + 2;
-
-  doc.setFillColor(...tone);
-  doc.roundedRect(px, py, pw, 13, 2, 2, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text(result.gradeLabel.replace('—', '-'), px + 5, py + 8.6);
-
-  py += 20;
-  doc.setTextColor(...MUTED);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.text('MODEL CONFIDENCE', px, py);
-  doc.setTextColor(...NAVY);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(20);
-  doc.text(`${result.confidence}%`, px, py + 9);
-
-  // confidence bar
-  const barY = py + 13;
-  doc.setFillColor(...HAIRLINE);
-  doc.roundedRect(px, barY, pw, 2.4, 1.2, 1.2, 'F');
-  doc.setFillColor(...TEAL);
-  doc.roundedRect(px, barY, (pw * result.confidence) / 100, 2.4, 1.2, 1.2, 'F');
-
-  // findings table
-  py = barY + 10;
-  doc.setFontSize(8);
-  doc.setTextColor(...MUTED);
-  doc.setFont('helvetica', 'normal');
-  doc.text('DETECTED FEATURES', px, py);
-  py += 4.5;
-  result.findings.forEach(([label, value]) => {
-    doc.setDrawColor(...HAIRLINE);
-    doc.line(px, py, px + pw, py);
-    py += 4.6;
-    doc.setTextColor(...INK);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.text(label, px, py);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...MUTED);
-    doc.text(value, px + pw, py, { align: 'right' });
-    py += 2.4;
-  });
-
-  // ---- Explanation -------------------------------------------------------
-  y += imgSize + 12;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10.5);
-  doc.setTextColor(...NAVY);
-  doc.text('AI explanation', M, y);
-  y += 6;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9.5);
-  doc.setTextColor(...INK);
-  const lines = doc.splitTextToSize(result.explanation, pageW - M * 2);
-  doc.text(lines, M, y);
-  y += lines.length * 5 + 6;
-
-  // ---- Referral recommendation ------------------------------------------
-  doc.setFillColor(243, 247, 250);
-  doc.roundedRect(M, y, pageW - M * 2, 20, 2, 2, 'F');
-  doc.setFillColor(...tone);
-  doc.roundedRect(M, y, 1.6, 20, 0.8, 0.8, 'F');
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(...MUTED);
-  doc.text('REFERRAL RECOMMENDATION', M + 6, y + 7.5);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11.5);
-  doc.setTextColor(...NAVY);
-  doc.text(result.referral, M + 6, y + 15);
-
-  // ---- Clinical notes ----------------------------------------------------
-  y += 28;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10.5);
-  doc.setTextColor(...NAVY);
-  doc.text('Clinician notes', M, y);
-  y += 6;
-  doc.setDrawColor(...HAIRLINE);
-  for (let i = 0; i < 4; i += 1) {
-    doc.line(M, y + i * 9, pageW - M, y + i * 9);
-  }
-  y += 34;
-
-  // ---- Signature + footer ------------------------------------------------
-  y += 10;
-  doc.setDrawColor(...HAIRLINE);
-  doc.line(M, y, M + 60, y);
-  doc.line(pageW - M - 60, y, pageW - M, y);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(...MUTED);
-  doc.text('Screening technician', M, y + 5);
-  doc.text('Reviewing ophthalmologist', pageW - M, y + 5, { align: 'right' });
-
-  doc.setDrawColor(...HAIRLINE);
-  doc.line(M, 276, pageW - M, 276);
-  doc.setFontSize(7.5);
-  doc.setTextColor(...MUTED);
-  const footer = doc.splitTextToSize(
-    'Generated by RetinaScan XAI — for clinical validation only. Final diagnosis must be confirmed by a licensed ophthalmologist.',
-    pageW - M * 2,
-  );
-  doc.text(footer, M, 281);
-  doc.text(`${patientId} · Page 1 of 1`, pageW - M, 291, { align: 'right' });
-
-  const fileSafeId = patientId.replace(/[^\w-]/g, '');
-  doc.save(`RetinaScan-XAI-Report-${fileSafeId}.pdf`);
+  const safeId = result.case_id.replace(/[^\w-]/g, '');
+  doc.save(`RetinaScan-XAI-Report-${safeId}.pdf`);
 }

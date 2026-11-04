@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": "unsupported_media_type",
+    "message": "Upload a JPEG or PNG image."
+  }
+}

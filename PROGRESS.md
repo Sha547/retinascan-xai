@@ -17,11 +17,12 @@ _(not started)_
 
 ## Lane C: Frontend (Codex, Mac)
 
-_(not started)_
+- [2026-11-05 02:40] RUNNING: Phase 1 API layer and exact fixture copies implemented; working on evidence, queue and PDF integration in web/.
+- [2026-11-05 02:40] BLOCKED: shell DNS cannot resolve github.com or registry.npmjs.org. Retrieved the exact main snapshot through the read-only GitHub connector and recovered original commit 9be5338 on lane-c-frontend. npm install (online and cache-only) failed; build/lint and push remain unverified. No backend LAN IP is published in Lane B yet.
 
 ## Contract change requests
 
-_(none)_
+- [2026-11-05, Lane C] Please supply full Case fixtures for c_20261105_a10004 and c_20261105_a10005. They appear in cases_all/pending but have no matching detail payload. Frontend demo shows their provided summary values and labels missing probabilities, recommendation and evidence as unavailable; no values are invented. No API schema change requested.
 
 ## Review findings (Phase 3)
 

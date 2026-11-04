@@ -20,6 +20,7 @@ import numpy as np
 GRADE_LABELS = ["No DR", "Mild NPDR", "Moderate NPDR", "Severe NPDR", "Proliferative DR"]
 REFERABLE_MIN_GRADE = 2
 MOCK_NOTE = "Mock heatmap for development. Not Grad-CAM and not derived from image content."
+HEATMAP_MAX_SIDE = 1024
 FIXTURE_CURVE = Path(__file__).resolve().parents[1] / "docs" / "fixtures" / "operating_curve.json"
 
 
@@ -71,7 +72,11 @@ class Predictor(ABC):
 
     @abstractmethod
     def predict(self, image: np.ndarray) -> dict:
-        """RGB uint8 image -> {"prediction", "evidence", "model"}, or raise ModelUnavailable."""
+        """RGB uint8 image -> dict, or raise ModelUnavailable.
+
+        Keys match ml/infer.py RetinaModel.predict(): prediction, recommendation,
+        priority, evidence and model.
+        """
 
     @abstractmethod
     def thumbnail(self, id_code: str) -> bytes | None:
@@ -112,7 +117,13 @@ class MockPredictor(Predictor):
             "heatmap_note": MOCK_NOTE,
             "similar": self._similar(rng, digest, grade),
         }
-        return {"prediction": prediction, "evidence": evidence, "model": dict(self.model)}
+        return {
+            "prediction": prediction,
+            "recommendation": recommendation_for(prediction),
+            "priority": priority_for(prediction),
+            "evidence": evidence,
+            "model": dict(self.model),
+        }
 
     def thumbnail(self, id_code: str) -> bytes | None:
         if not id_code.startswith("mock"):
@@ -148,7 +159,9 @@ class MockPredictor(Predictor):
         small[..., 2] = 255
         small[..., 3] = (200 * strength).astype(np.uint8)
         height, width = shape
-        full = cv2.resize(small, (width, height), interpolation=cv2.INTER_LINEAR)
+        scale = min(1.0, HEATMAP_MAX_SIDE / max(height, width))
+        target = (max(1, round(width * scale)), max(1, round(height * scale)))
+        full = cv2.resize(small, target, interpolation=cv2.INTER_LINEAR)
         encoded = base64.b64encode(cv2.imencode(".png", full)[1].tobytes()).decode()
         return f"data:image/png;base64,{encoded}"
 

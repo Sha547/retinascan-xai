@@ -1,3 +1,4 @@
+import base64
 import re
 import sqlite3
 
@@ -515,16 +516,26 @@ def test_mock_probs_are_valid_and_grade_is_argmax():
         assert prediction["confidence"] == max(prediction["probs"])
 
 
-def test_mock_heatmap_matches_upload_size_and_has_alpha():
-    image = rgb_images(1)[0]
+def decoded_heatmap(image):
     uri = MockPredictor().predict(image)["evidence"]["heatmap_png"]
     prefix = "data:image/png;base64,"
     assert uri.startswith(prefix)
-    import base64
-
     png = base64.b64decode(uri[len(prefix):])
-    decoded = cv2.imdecode(np.frombuffer(png, np.uint8), cv2.IMREAD_UNCHANGED)
-    assert decoded.shape == (32, 48, 4)
+    return cv2.imdecode(np.frombuffer(png, np.uint8), cv2.IMREAD_UNCHANGED)
+
+
+def test_mock_heatmap_keeps_small_upload_size_and_has_alpha():
+    assert decoded_heatmap(rgb_images(1)[0]).shape == (32, 48, 4)
+
+
+def test_mock_heatmap_longest_side_is_capped_and_keeps_aspect():
+    image = np.zeros((2000, 3000, 3), dtype=np.uint8)
+    assert decoded_heatmap(image).shape == (683, 1024, 4)
+
+
+def test_mock_result_has_the_ml_infer_keys():
+    result = MockPredictor().predict(rgb_images(1)[0])
+    assert {"prediction", "recommendation", "priority", "evidence", "model"} <= set(result)
 
 
 def test_mock_evidence_makes_no_gradcam_claim():

@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
-from api.inference import MockPredictor, build_prediction
+from api.inference import MockPredictor, build_prediction, priority_for, recommendation_for
 from api.main import create_app
 from ml import quality
 
@@ -59,9 +59,12 @@ class ScriptedPredictor(MockPredictor):
         self.calls += 1
         result = super().predict(image)
         if self.queue:
-            result["prediction"] = build_prediction(
+            prediction = build_prediction(
                 self.queue.pop(0), self.model["abstain_threshold"], self.model["referable_threshold"]
             )
+            result["prediction"] = prediction
+            result["recommendation"] = recommendation_for(prediction)
+            result["priority"] = priority_for(prediction)
         return result
 
 

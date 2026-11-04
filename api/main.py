@@ -222,9 +222,14 @@ def create_app(
 
         if quality_result["ok"]:
             result = predictor.predict(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB))
-            prediction, evidence, model = result["prediction"], result["evidence"], result["model"]
         else:
-            prediction, evidence, model = None, None, dict(predictor.model)
+            result = {
+                "prediction": None,
+                "recommendation": recommendation_for(None),
+                "priority": priority_for(None),
+                "evidence": None,
+                "model": dict(predictor.model),
+            }
 
         created_at = now_iso()
         case = {
@@ -232,15 +237,15 @@ def create_app(
             "patient_id": patient_id or f"PHC-{created_at[:4]}-{store.next_patient_number():05d}",
             "eye": eye,
             "created_at": created_at,
-            "status": "pending" if prediction else "retake",
+            "status": "pending" if result["prediction"] else "retake",
             "quality": quality_result,
-            "prediction": prediction,
-            "recommendation": recommendation_for(prediction),
-            "evidence": evidence,
-            "priority": priority_for(prediction),
+            "prediction": result["prediction"],
+            "recommendation": result["recommendation"],
+            "evidence": result["evidence"],
+            "priority": result["priority"],
             "final_grade": None,
             "decisions": [],
-            "model": model,
+            "model": result["model"],
         }
 
         image_path = uploads / f"{case['case_id']}{suffix}"

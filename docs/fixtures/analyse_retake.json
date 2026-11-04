@@ -1,0 +1,43 @@
+{
+  "case_id": "c_20261105_a10003",
+  "patient_id": "PHC-2026-00044",
+  "eye": "left",
+  "created_at": "2026-11-05T10:30:00Z",
+  "status": "retake",
+  "image_url": "/api/cases/c_20261105_a10003/image",
+  "quality": {
+    "ok": false,
+    "metrics": {
+      "sharpness": 21.3,
+      "brightness": 18.7,
+      "contrast": 9.2,
+      "field_coverage": 0.64,
+      "glare_fraction": 0.0
+    },
+    "reasons": [
+      {
+        "code": "too_dark",
+        "message": "Image too dark: increase illumination and retake."
+      },
+      {
+        "code": "blurry",
+        "message": "Image is blurry: hold the camera steady, refocus and retake."
+      }
+    ]
+  },
+  "prediction": null,
+  "recommendation": "Image not gradable. Please retake the photo (see reasons).",
+  "evidence": null,
+  "priority": null,
+  "final_grade": null,
+  "decisions": [],
+  "model": {
+    "version": "mock-0",
+    "mock": true,
+    "temperature": 1.0,
+    "abstain_threshold": 0.55,
+    "referable_threshold": 0.35,
+    "calibrated_on": "validation"
+  },
+  "disclaimer": "Research prototype, not clinically validated. Final decision must be made by a qualified ophthalmologist."
+}

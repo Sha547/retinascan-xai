@@ -1,14 +1,36 @@
-# dependencies
-node_modules/
+# --- data: never commit datasets or patient images ---
+aptos/
+data/
+external/
+*.zip
 
-# build output
-dist/
+# --- model weights and large artifacts (transferred via Kaggle outputs) ---
+artifacts/*.pt
+artifacts/*.pth
+artifacts/*.npz
+artifacts/thumbs/
+artifacts/quality_examples/
+runs/
+kaggle/out/
+kaggle/code_dataset/
 
-# logs
-*.log
-npm-debug.log*
+# --- backend runtime state ---
+api/uploads/
+*.db
+*.sqlite
 
-# editor / OS
+# --- python ---
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# --- secrets ---
+kaggle.json
+.env
+
+# --- editor / OS ---
 .DS_Store
 .vscode/
 .idea/
+*.log

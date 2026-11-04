@@ -1,0 +1,604 @@
+{
+  "source": "validation",
+  "n": 553,
+  "n_positive": 235,
+  "positive_class": "referable (grade >= 2)",
+  "default_threshold": 0.6078386902809143,
+  "mock": false,
+  "points": [
+    {
+      "threshold": 0.01,
+      "sensitivity": 1.0,
+      "specificity": 0.761,
+      "referral_rate": 0.5624
+    },
+    {
+      "threshold": 0.02,
+      "sensitivity": 1.0,
+      "specificity": 0.7956,
+      "referral_rate": 0.5425
+    },
+    {
+      "threshold": 0.03,
+      "sensitivity": 0.9957,
+      "specificity": 0.805,
+      "referral_rate": 0.5353
+    },
+    {
+      "threshold": 0.04,
+      "sensitivity": 0.9957,
+      "specificity": 0.8145,
+      "referral_rate": 0.5298
+    },
+    {
+      "threshold": 0.05,
+      "sensitivity": 0.9957,
+      "specificity": 0.8302,
+      "referral_rate": 0.5208
+    },
+    {
+      "threshold": 0.06,
+      "sensitivity": 0.9957,
+      "specificity": 0.8491,
+      "referral_rate": 0.5099
+    },
+    {
+      "threshold": 0.07,
+      "sensitivity": 0.9957,
+      "specificity": 0.8522,
+      "referral_rate": 0.5081
+    },
+    {
+      "threshold": 0.08,
+      "sensitivity": 0.9957,
+      "specificity": 0.8616,
+      "referral_rate": 0.5027
+    },
+    {
+      "threshold": 0.09,
+      "sensitivity": 0.9957,
+      "specificity": 0.8616,
+      "referral_rate": 0.5027
+    },
+    {
+      "threshold": 0.1,
+      "sensitivity": 0.9957,
+      "specificity": 0.8679,
+      "referral_rate": 0.4991
+    },
+    {
+      "threshold": 0.11,
+      "sensitivity": 0.9957,
+      "specificity": 0.8742,
+      "referral_rate": 0.4955
+    },
+    {
+      "threshold": 0.12,
+      "sensitivity": 0.9957,
+      "specificity": 0.8774,
+      "referral_rate": 0.4937
+    },
+    {
+      "threshold": 0.13,
+      "sensitivity": 0.9957,
+      "specificity": 0.8774,
+      "referral_rate": 0.4937
+    },
+    {
+      "threshold": 0.14,
+      "sensitivity": 0.9915,
+      "specificity": 0.8774,
+      "referral_rate": 0.4919
+    },
+    {
+      "threshold": 0.15,
+      "sensitivity": 0.9915,
+      "specificity": 0.8805,
+      "referral_rate": 0.4901
+    },
+    {
+      "threshold": 0.16,
+      "sensitivity": 0.9915,
+      "specificity": 0.8805,
+      "referral_rate": 0.4901
+    },
+    {
+      "threshold": 0.17,
+      "sensitivity": 0.9915,
+      "specificity": 0.8805,
+      "referral_rate": 0.4901
+    },
+    {
+      "threshold": 0.18,
+      "sensitivity": 0.9915,
+      "specificity": 0.8805,
+      "referral_rate": 0.4901
+    },
+    {
+      "threshold": 0.19,
+      "sensitivity": 0.9915,
+      "specificity": 0.8805,
+      "referral_rate": 0.4901
+    },
+    {
+      "threshold": 0.2,
+      "sensitivity": 0.9915,
+      "specificity": 0.8805,
+      "referral_rate": 0.4901
+    },
+    {
+      "threshold": 0.21,
+      "sensitivity": 0.9872,
+      "specificity": 0.8805,
+      "referral_rate": 0.4882
+    },
+    {
+      "threshold": 0.22,
+      "sensitivity": 0.9872,
+      "specificity": 0.8899,
+      "referral_rate": 0.4828
+    },
+    {
+      "threshold": 0.23,
+      "sensitivity": 0.9872,
+      "specificity": 0.8931,
+      "referral_rate": 0.481
+    },
+    {
+      "threshold": 0.24,
+      "sensitivity": 0.9872,
+      "specificity": 0.8931,
+      "referral_rate": 0.481
+    },
+    {
+      "threshold": 0.25,
+      "sensitivity": 0.9872,
+      "specificity": 0.8994,
+      "referral_rate": 0.4774
+    },
+    {
+      "threshold": 0.26,
+      "sensitivity": 0.9872,
+      "specificity": 0.9025,
+      "referral_rate": 0.4756
+    },
+    {
+      "threshold": 0.27,
+      "sensitivity": 0.9872,
+      "specificity": 0.9025,
+      "referral_rate": 0.4756
+    },
+    {
+      "threshold": 0.28,
+      "sensitivity": 0.9872,
+      "specificity": 0.9057,
+      "referral_rate": 0.4738
+    },
+    {
+      "threshold": 0.29,
+      "sensitivity": 0.9872,
+      "specificity": 0.9057,
+      "referral_rate": 0.4738
+    },
+    {
+      "threshold": 0.3,
+      "sensitivity": 0.9872,
+      "specificity": 0.9057,
+      "referral_rate": 0.4738
+    },
+    {
+      "threshold": 0.31,
+      "sensitivity": 0.9872,
+      "specificity": 0.9057,
+      "referral_rate": 0.4738
+    },
+    {
+      "threshold": 0.32,
+      "sensitivity": 0.9872,
+      "specificity": 0.9088,
+      "referral_rate": 0.472
+    },
+    {
+      "threshold": 0.33,
+      "sensitivity": 0.9872,
+      "specificity": 0.9088,
+      "referral_rate": 0.472
+    },
+    {
+      "threshold": 0.34,
+      "sensitivity": 0.983,
+      "specificity": 0.9119,
+      "referral_rate": 0.4684
+    },
+    {
+      "threshold": 0.35,
+      "sensitivity": 0.983,
+      "specificity": 0.9119,
+      "referral_rate": 0.4684
+    },
+    {
+      "threshold": 0.36,
+      "sensitivity": 0.9787,
+      "specificity": 0.9151,
+      "referral_rate": 0.4647
+    },
+    {
+      "threshold": 0.37,
+      "sensitivity": 0.9787,
+      "specificity": 0.9182,
+      "referral_rate": 0.4629
+    },
+    {
+      "threshold": 0.38,
+      "sensitivity": 0.9787,
+      "specificity": 0.9214,
+      "referral_rate": 0.4611
+    },
+    {
+      "threshold": 0.39,
+      "sensitivity": 0.9745,
+      "specificity": 0.9214,
+      "referral_rate": 0.4593
+    },
+    {
+      "threshold": 0.4,
+      "sensitivity": 0.9702,
+      "specificity": 0.9277,
+      "referral_rate": 0.4539
+    },
+    {
+      "threshold": 0.41,
+      "sensitivity": 0.966,
+      "specificity": 0.9371,
+      "referral_rate": 0.4467
+    },
+    {
+      "threshold": 0.42,
+      "sensitivity": 0.966,
+      "specificity": 0.9371,
+      "referral_rate": 0.4467
+    },
+    {
+      "threshold": 0.43,
+      "sensitivity": 0.966,
+      "specificity": 0.9403,
+      "referral_rate": 0.4448
+    },
+    {
+      "threshold": 0.44,
+      "sensitivity": 0.966,
+      "specificity": 0.9403,
+      "referral_rate": 0.4448
+    },
+    {
+      "threshold": 0.45,
+      "sensitivity": 0.9617,
+      "specificity": 0.9403,
+      "referral_rate": 0.443
+    },
+    {
+      "threshold": 0.46,
+      "sensitivity": 0.9617,
+      "specificity": 0.9434,
+      "referral_rate": 0.4412
+    },
+    {
+      "threshold": 0.47,
+      "sensitivity": 0.9532,
+      "specificity": 0.9465,
+      "referral_rate": 0.4358
+    },
+    {
+      "threshold": 0.48,
+      "sensitivity": 0.9532,
+      "specificity": 0.9465,
+      "referral_rate": 0.4358
+    },
+    {
+      "threshold": 0.49,
+      "sensitivity": 0.9532,
+      "specificity": 0.9465,
+      "referral_rate": 0.4358
+    },
+    {
+      "threshold": 0.5,
+      "sensitivity": 0.9447,
+      "specificity": 0.9465,
+      "referral_rate": 0.4322
+    },
+    {
+      "threshold": 0.51,
+      "sensitivity": 0.9404,
+      "specificity": 0.9465,
+      "referral_rate": 0.4304
+    },
+    {
+      "threshold": 0.52,
+      "sensitivity": 0.9277,
+      "specificity": 0.9465,
+      "referral_rate": 0.425
+    },
+    {
+      "threshold": 0.53,
+      "sensitivity": 0.9277,
+      "specificity": 0.9465,
+      "referral_rate": 0.425
+    },
+    {
+      "threshold": 0.54,
+      "sensitivity": 0.9234,
+      "specificity": 0.9465,
+      "referral_rate": 0.4231
+    },
+    {
+      "threshold": 0.55,
+      "sensitivity": 0.9191,
+      "specificity": 0.9465,
+      "referral_rate": 0.4213
+    },
+    {
+      "threshold": 0.56,
+      "sensitivity": 0.9149,
+      "specificity": 0.9465,
+      "referral_rate": 0.4195
+    },
+    {
+      "threshold": 0.57,
+      "sensitivity": 0.9149,
+      "specificity": 0.9465,
+      "referral_rate": 0.4195
+    },
+    {
+      "threshold": 0.58,
+      "sensitivity": 0.9149,
+      "specificity": 0.9497,
+      "referral_rate": 0.4177
+    },
+    {
+      "threshold": 0.59,
+      "sensitivity": 0.9106,
+      "specificity": 0.9497,
+      "referral_rate": 0.4159
+    },
+    {
+      "threshold": 0.6,
+      "sensitivity": 0.9021,
+      "specificity": 0.9528,
+      "referral_rate": 0.4105
+    },
+    {
+      "threshold": 0.61,
+      "sensitivity": 0.8979,
+      "specificity": 0.9528,
+      "referral_rate": 0.4087
+    },
+    {
+      "threshold": 0.62,
+      "sensitivity": 0.8894,
+      "specificity": 0.9528,
+      "referral_rate": 0.4051
+    },
+    {
+      "threshold": 0.63,
+      "sensitivity": 0.8809,
+      "specificity": 0.9591,
+      "referral_rate": 0.3978
+    },
+    {
+      "threshold": 0.64,
+      "sensitivity": 0.8766,
+      "specificity": 0.9591,
+      "referral_rate": 0.396
+    },
+    {
+      "threshold": 0.65,
+      "sensitivity": 0.8766,
+      "specificity": 0.9591,
+      "referral_rate": 0.396
+    },
+    {
+      "threshold": 0.66,
+      "sensitivity": 0.8638,
+      "specificity": 0.9591,
+      "referral_rate": 0.3906
+    },
+    {
+      "threshold": 0.67,
+      "sensitivity": 0.8511,
+      "specificity": 0.9623,
+      "referral_rate": 0.3834
+    },
+    {
+      "threshold": 0.68,
+      "sensitivity": 0.834,
+      "specificity": 0.9623,
+      "referral_rate": 0.3761
+    },
+    {
+      "threshold": 0.69,
+      "sensitivity": 0.8213,
+      "specificity": 0.9623,
+      "referral_rate": 0.3707
+    },
+    {
+      "threshold": 0.7,
+      "sensitivity": 0.8128,
+      "specificity": 0.9623,
+      "referral_rate": 0.3671
+    },
+    {
+      "threshold": 0.71,
+      "sensitivity": 0.8043,
+      "specificity": 0.9623,
+      "referral_rate": 0.3635
+    },
+    {
+      "threshold": 0.72,
+      "sensitivity": 0.7957,
+      "specificity": 0.9623,
+      "referral_rate": 0.3599
+    },
+    {
+      "threshold": 0.73,
+      "sensitivity": 0.7872,
+      "specificity": 0.9623,
+      "referral_rate": 0.3562
+    },
+    {
+      "threshold": 0.74,
+      "sensitivity": 0.783,
+      "specificity": 0.9654,
+      "referral_rate": 0.3526
+    },
+    {
+      "threshold": 0.75,
+      "sensitivity": 0.783,
+      "specificity": 0.9654,
+      "referral_rate": 0.3526
+    },
+    {
+      "threshold": 0.76,
+      "sensitivity": 0.766,
+      "specificity": 0.9654,
+      "referral_rate": 0.3454
+    },
+    {
+      "threshold": 0.77,
+      "sensitivity": 0.7574,
+      "specificity": 0.9686,
+      "referral_rate": 0.34
+    },
+    {
+      "threshold": 0.78,
+      "sensitivity": 0.7447,
+      "specificity": 0.9686,
+      "referral_rate": 0.3345
+    },
+    {
+      "threshold": 0.79,
+      "sensitivity": 0.7362,
+      "specificity": 0.9686,
+      "referral_rate": 0.3309
+    },
+    {
+      "threshold": 0.8,
+      "sensitivity": 0.7234,
+      "specificity": 0.9686,
+      "referral_rate": 0.3255
+    },
+    {
+      "threshold": 0.81,
+      "sensitivity": 0.7149,
+      "specificity": 0.9717,
+      "referral_rate": 0.3201
+    },
+    {
+      "threshold": 0.82,
+      "sensitivity": 0.7106,
+      "specificity": 0.9748,
+      "referral_rate": 0.3165
+    },
+    {
+      "threshold": 0.83,
+      "sensitivity": 0.7064,
+      "specificity": 0.9748,
+      "referral_rate": 0.3146
+    },
+    {
+      "threshold": 0.84,
+      "sensitivity": 0.6894,
+      "specificity": 0.9748,
+      "referral_rate": 0.3074
+    },
+    {
+      "threshold": 0.85,
+      "sensitivity": 0.6681,
+      "specificity": 0.9748,
+      "referral_rate": 0.2984
+    },
+    {
+      "threshold": 0.86,
+      "sensitivity": 0.6468,
+      "specificity": 0.9811,
+      "referral_rate": 0.2857
+    },
+    {
+      "threshold": 0.87,
+      "sensitivity": 0.6298,
+      "specificity": 0.9874,
+      "referral_rate": 0.2749
+    },
+    {
+      "threshold": 0.88,
+      "sensitivity": 0.6,
+      "specificity": 0.9874,
+      "referral_rate": 0.2622
+    },
+    {
+      "threshold": 0.89,
+      "sensitivity": 0.5745,
+      "specificity": 0.9874,
+      "referral_rate": 0.2514
+    },
+    {
+      "threshold": 0.9,
+      "sensitivity": 0.566,
+      "specificity": 0.9874,
+      "referral_rate": 0.2477
+    },
+    {
+      "threshold": 0.91,
+      "sensitivity": 0.566,
+      "specificity": 0.9874,
+      "referral_rate": 0.2477
+    },
+    {
+      "threshold": 0.92,
+      "sensitivity": 0.5447,
+      "specificity": 0.9874,
+      "referral_rate": 0.2387
+    },
+    {
+      "threshold": 0.93,
+      "sensitivity": 0.5362,
+      "specificity": 0.9874,
+      "referral_rate": 0.2351
+    },
+    {
+      "threshold": 0.94,
+      "sensitivity": 0.4979,
+      "specificity": 0.9906,
+      "referral_rate": 0.217
+    },
+    {
+      "threshold": 0.95,
+      "sensitivity": 0.4638,
+      "specificity": 0.9906,
+      "referral_rate": 0.2025
+    },
+    {
+      "threshold": 0.96,
+      "sensitivity": 0.3957,
+      "specificity": 0.9937,
+      "referral_rate": 0.1718
+    },
+    {
+      "threshold": 0.97,
+      "sensitivity": 0.3532,
+      "specificity": 0.9937,
+      "referral_rate": 0.1537
+    },
+    {
+      "threshold": 0.98,
+      "sensitivity": 0.2979,
+      "specificity": 0.9937,
+      "referral_rate": 0.1302
+    },
+    {
+      "threshold": 0.99,
+      "sensitivity": 0.1915,
+      "specificity": 0.9937,
+      "referral_rate": 0.085
+    }
+  ]
+}

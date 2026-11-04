@@ -1,0 +1,10 @@
+{
+  "temperature": 2.0398876927282856,
+  "abstain_threshold": 0.5323888063430786,
+  "referable_threshold": 0.6078386902809143,
+  "fitted_on": "validation",
+  "abstain_rule": "abstain if max calibrated prob < abstain_threshold",
+  "referable_rule": "referable if p2+p3+p4 >= referable_threshold",
+  "target_val_coverage": 0.85,
+  "target_val_sensitivity": 0.9
+}

@@ -1,0 +1,228 @@
+{
+  "generated_at": "2026-11-04T20:56:55+00:00",
+  "code_digest": "0d17e21fa36a",
+  "model": {
+    "version": "effnet-b0-512-exp1",
+    "arch": "efficientnet_b0",
+    "img_size": 512,
+    "preprocess": "v1",
+    "clahe": true,
+    "epoch": 11,
+    "val_qwk": 0.9063053000163155
+  },
+  "protocol": {
+    "split": "image-level stratified group split 70/15/15 (near-duplicates grouped); APTOS has no patient IDs, so patient-level separation is not possible",
+    "fitted_on_validation": [
+      "temperature",
+      "referable_threshold",
+      "abstain_threshold",
+      "model selection"
+    ],
+    "test_used_for": "final scoring only, once",
+    "tta": false
+  },
+  "calibration": {
+    "temperature": 2.0398876927282856,
+    "abstain_threshold": 0.5323888063430786,
+    "referable_threshold": 0.6078386902809143,
+    "fitted_on": "validation",
+    "abstain_rule": "abstain if max calibrated prob < abstain_threshold",
+    "referable_rule": "referable if p2+p3+p4 >= referable_threshold",
+    "target_val_coverage": 0.85,
+    "target_val_sensitivity": 0.9
+  },
+  "validation": {
+    "split": "validation",
+    "n": 553,
+    "class_counts": {
+      "No DR": 275,
+      "Mild NPDR": 43,
+      "Moderate NPDR": 167,
+      "Severe NPDR": 30,
+      "Proliferative DR": 38
+    },
+    "grading": {
+      "accuracy": 0.8481012658227848,
+      "qwk": 0.9063053000163155,
+      "confusion_matrix": [
+        [
+          272,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          6,
+          22,
+          15,
+          0,
+          0
+        ],
+        [
+          0,
+          13,
+          137,
+          13,
+          4
+        ],
+        [
+          0,
+          1,
+          6,
+          19,
+          4
+        ],
+        [
+          0,
+          3,
+          12,
+          4,
+          19
+        ]
+      ],
+      "confusion_matrix_note": "rows = true grade 0..4, columns = predicted grade 0..4"
+    },
+    "referable": {
+      "definition": "grade >= 2",
+      "n_positive": 235,
+      "auc": 0.979987956643918,
+      "threshold": 0.6078386902809143,
+      "tp": 212,
+      "fp": 15,
+      "tn": 303,
+      "fn": 23,
+      "sensitivity": 0.902127659574468,
+      "specificity": 0.9528301886792453,
+      "ppv": 0.933920704845815,
+      "npv": 0.9294478527607362,
+      "referral_rate": 0.4104882459312839
+    },
+    "calibration": {
+      "ece_before": 0.06750373825242248,
+      "ece_after": 0.06586299650707902,
+      "nll_before": 0.6096767783164978,
+      "nll_after": 0.49282345175743103,
+      "ece_bins": 15
+    },
+    "abstention": {
+      "threshold": 0.5323888063430786,
+      "abstention_rate": 0.15009041591320071,
+      "n_graded": 470,
+      "accuracy_overall": 0.8481012658227848,
+      "accuracy_graded": 0.9,
+      "qwk_overall": 0.9063053000163155,
+      "qwk_graded": 0.9361137319495306,
+      "referable_sensitivity_graded": 0.9464285714285714
+    }
+  },
+  "test": {
+    "split": "test",
+    "n": 546,
+    "class_counts": {
+      "No DR": 261,
+      "Mild NPDR": 60,
+      "Moderate NPDR": 151,
+      "Severe NPDR": 28,
+      "Proliferative DR": 46
+    },
+    "grading": {
+      "accuracy": 0.8076923076923077,
+      "qwk": 0.8906106806631675,
+      "confusion_matrix": [
+        [
+          256,
+          3,
+          2,
+          0,
+          0
+        ],
+        [
+          3,
+          26,
+          28,
+          1,
+          2
+        ],
+        [
+          0,
+          12,
+          117,
+          16,
+          6
+        ],
+        [
+          0,
+          0,
+          10,
+          13,
+          5
+        ],
+        [
+          0,
+          3,
+          10,
+          4,
+          29
+        ]
+      ],
+      "confusion_matrix_note": "rows = true grade 0..4, columns = predicted grade 0..4"
+    },
+    "referable": {
+      "definition": "grade >= 2",
+      "n_positive": 225,
+      "auc": 0.9763724472135686,
+      "threshold": 0.6078386902809143,
+      "tp": 208,
+      "fp": 27,
+      "tn": 294,
+      "fn": 17,
+      "sensitivity": 0.9244444444444444,
+      "specificity": 0.9158878504672897,
+      "ppv": 0.8851063829787233,
+      "npv": 0.9453376205787781,
+      "referral_rate": 0.43040293040293043
+    },
+    "calibration": {
+      "ece_before": 0.10285143767084395,
+      "ece_after": 0.03989692632750277,
+      "nll_before": 0.6889897584915161,
+      "nll_after": 0.5201296806335449,
+      "ece_bins": 15
+    },
+    "abstention": {
+      "threshold": 0.5323888063430786,
+      "abstention_rate": 0.12454212454212454,
+      "n_graded": 478,
+      "accuracy_overall": 0.8076923076923077,
+      "accuracy_graded": 0.8577405857740585,
+      "qwk_overall": 0.8906106806631675,
+      "qwk_graded": 0.9233954451345756,
+      "referable_sensitivity_graded": 0.9470588235294117
+    },
+    "bootstrap_95ci": {
+      "qwk": [
+        0.8605561690692636,
+        0.9174210447938547
+      ],
+      "sensitivity": [
+        0.8868674544053429,
+        0.9559567550930111
+      ],
+      "specificity": [
+        0.8871412710852365,
+        0.9453446634479945
+      ],
+      "auc": [
+        0.9656065570612227,
+        0.9860509171179718
+      ],
+      "accuracy": [
+        0.7765567765567766,
+        0.8406593406593407
+      ]
+    }
+  },
+  "external": null,
+  "external_drop": null
+}

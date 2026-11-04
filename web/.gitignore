@@ -12,3 +12,7 @@ npm-debug.log*
 .DS_Store
 .vscode/
 .idea/
+
+# local Vite proxy configuration
+.env.local
+.env.*.local

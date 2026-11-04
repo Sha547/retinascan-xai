@@ -8,15 +8,15 @@
 
   --ink: #14243b;
   --body: #3d4f66;
-  --muted: #6b7f96;
+  --muted: #53677e;
   --line: #e3eaf1;
   --line-strong: #cfdae5;
   --surface: #ffffff;
   --canvas: #f6f8fb;
 
-  --green: #15805c;
+  --green: #116c4c;
   --green-bg: #e7f6ef;
-  --orange: #c2640c;
+  --orange: #955009;
   --orange-bg: #fdf1e1;
   --red: #be2e2a;
   --red-bg: #fdecea;
@@ -538,7 +538,7 @@ button {
 }
 
 .btn-teal {
-  background: var(--teal);
+  background: var(--teal-600);
   color: #fff;
   box-shadow: 0 1px 2px rgba(13, 148, 136, 0.35);
 }
@@ -1342,7 +1342,7 @@ button {
 .sev-label {
   display: block;
   margin-top: 6px;
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--muted);
 }
 
@@ -1447,3 +1447,5 @@ button:disabled { cursor: wait; }
   .meta-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .success-rows div { flex-direction: column; gap: 3px; }
 }
+
+.scan-frame:has(.split-input:focus-visible) { outline: 3px solid var(--navy-500); outline-offset: 3px; }

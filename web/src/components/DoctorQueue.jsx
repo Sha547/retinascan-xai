@@ -9,8 +9,6 @@ export default function DoctorQueue({ onOpen, onMock, history = false }) {
   const [error, setError] = useState('');
   useEffect(() => {
     let active = true;
-    setData(null);
-    setError('');
     getCases(filter)
       .then((response) => {
         if (!active) return;
@@ -24,11 +22,17 @@ export default function DoctorQueue({ onOpen, onMock, history = false }) {
       active = false;
     };
   }, [filter, refresh, onMock]);
+  function reload(nextFilter = filter) {
+    setData(null);
+    setError('');
+    setFilter(nextFilter);
+    setRefresh((n) => n + 1);
+  }
   return (
     <section className={`card queue ${history ? 'history' : 'screen'}`}>
       <div className="queue-head">
         {history ? <h2>Recent screenings</h2> : <h1>Doctor queue</h1>}
-        <button className="btn btn-ghost" onClick={() => setRefresh((n) => n + 1)}>
+        <button className="btn btn-ghost" onClick={() => reload()}>
           Refresh {history ? 'screenings' : 'queue'}
         </button>
       </div>
@@ -39,7 +43,7 @@ export default function DoctorQueue({ onOpen, onMock, history = false }) {
               key={s}
               className={`seg-btn ${filter === s ? 'active' : ''}`}
               aria-pressed={filter === s}
-              onClick={() => setFilter(s)}
+              onClick={() => reload(s)}
             >
               {s[0].toUpperCase() + s.slice(1)}
             </button>

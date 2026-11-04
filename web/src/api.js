@@ -49,6 +49,11 @@ async function request(path, options = {}, binary = false) {
   });
   if (!response.ok) {
     const body = await response.json().catch(() => null);
+    // A gateway failure without an API envelope means the dev proxy could not
+    // reach its upstream. Keep actual backend error envelopes as API errors.
+    if ([502, 504].includes(response.status) && !body?.error) {
+      throw new NetworkError('The API proxy cannot reach the backend. Check VITE_API_PROXY.');
+    }
     throw new ApiError(
       body?.error?.message ?? `Request failed (${response.status}).`,
       body?.error?.code,

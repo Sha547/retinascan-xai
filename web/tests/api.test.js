@@ -152,3 +152,23 @@ test('malformed reachable health response is an error, not a fixture fallback', 
   await assert.rejects(a.initialiseApi(), { message: 'The API returned invalid JSON.' });
   assert.equal(a.isDemoMode(), false);
 });
+
+test('proxy gateway failures trigger fixture fallback, while API envelopes stay visible', async () => {
+  for (const status of [502, 504]) {
+    const a = await api('');
+    globalThis.fetch = async () => new Response('Bad gateway', { status });
+    const connection = await a.initialiseApi();
+    assert.equal(connection.demo, true);
+    assert.match(connection.notice, /unreachable/);
+  }
+  const a = await api('');
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        error: { code: 'internal', message: 'Upstream processing failed.' },
+      }),
+      { status: 502 },
+    );
+  await assert.rejects(a.initialiseApi(), { message: 'Upstream processing failed.', status: 502 });
+  assert.equal(a.isDemoMode(), false);
+});

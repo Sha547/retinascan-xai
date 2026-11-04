@@ -40,7 +40,8 @@ backend/reverse proxy; configure that on the hosting machine.
 ## Fixture demo
 
 Open `http://localhost:5173/?demo=1`. If the initial `/api/health` request cannot
-connect or times out, the app displays a notice and switches to fixtures. HTTP
+connect or times out, the app displays a notice and switches to fixtures. A proxy 502/504 without an API error envelope also triggers this fallback. Use
+**Open fixture demo** on the connection error screen to switch explicitly. HTTP
 errors from a reachable service are shown with the API's message; they do not
 silently switch modes. Reload without `?demo=1` to retry the live connection.
 

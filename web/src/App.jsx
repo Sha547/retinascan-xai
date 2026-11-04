@@ -220,9 +220,21 @@ export default function App() {
           <div className="notice error" role="alert">
             {error}
             {!ready && (
-              <button className="btn btn-ghost" onClick={() => setRetry((n) => n + 1)}>
-                Retry API connection
-              </button>
+              <div className="review-actions" style={{ marginTop: 12 }}>
+                <button className="btn btn-ghost" onClick={() => setRetry((n) => n + 1)}>
+                  Retry API connection
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('demo', '1');
+                    window.location.assign(url.href);
+                  }}
+                >
+                  Open fixture demo
+                </button>
+              </div>
             )}
           </div>
         )}

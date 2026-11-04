@@ -1,0 +1,53 @@
+{
+  "n_rows_csv": 3662,
+  "n_used": 3662,
+  "missing_file": [],
+  "unreadable": {},
+  "class_counts_all": {
+    "0": 1805,
+    "1": 370,
+    "2": 999,
+    "3": 193,
+    "4": 295
+  },
+  "class_counts_by_split": {
+    "train": {
+      "0": 1269,
+      "1": 267,
+      "2": 681,
+      "3": 135,
+      "4": 211
+    },
+    "val": {
+      "0": 275,
+      "1": 43,
+      "2": 167,
+      "3": 30,
+      "4": 38
+    },
+    "test": {
+      "0": 261,
+      "1": 60,
+      "2": 151,
+      "3": 28,
+      "4": 46
+    }
+  },
+  "split_sizes": {
+    "train": 2563,
+    "val": 553,
+    "test": 546
+  },
+  "duplicates": {
+    "dhash_max_distance": 20,
+    "n_groups_with_duplicates": 131,
+    "n_images_in_duplicate_groups": 270,
+    "n_groups_with_conflicting_labels": 37,
+    "note": "Duplicate groups are kept within one split. Conflicting-label groups are kept as is."
+  },
+  "preprocess": {
+    "size": 512,
+    "clahe": true
+  },
+  "seed": 42
+}

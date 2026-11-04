@@ -38,3 +38,6 @@ kaggle/kernel/
 
 # local demo inputs (APTOS images: not redistributed)
 demo_images/
+
+# local agent worktrees and settings
+.claude/

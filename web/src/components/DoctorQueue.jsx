@@ -22,7 +22,7 @@ export default function DoctorQueue({ onOpen, onMock, history = false }) {
   const [error, setError] = useState('');
   useEffect(() => {
     let active = true;
-    getCases(filter)
+    getCases(filter, history ? 8 : 50)
       .then((response) => {
         if (!active) return;
         setData(response);
@@ -34,7 +34,7 @@ export default function DoctorQueue({ onOpen, onMock, history = false }) {
     return () => {
       active = false;
     };
-  }, [filter, refresh, onMock]);
+  }, [filter, refresh, onMock, history]);
   function reload(nextFilter = filter) {
     setData(null);
     setError('');
@@ -74,7 +74,7 @@ export default function DoctorQueue({ onOpen, onMock, history = false }) {
         {data && (
           <span className="muted num">
             {data.total} {data.total === 1 ? 'case' : 'cases'}
-            {data.total > data.cases.length && `, showing ${data.cases.length}`}
+            {data.total > data.cases.length && `, showing ${history ? 'latest ' : ''}${data.cases.length}`}
             {!history && filter === 'pending' && ' · ordered by triage priority'}
           </span>
         )}

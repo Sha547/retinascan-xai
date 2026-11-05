@@ -6,10 +6,17 @@ import QualityScreen from './components/QualityScreen.jsx';
 import ResultsScreen from './components/ResultsScreen.jsx';
 import SuccessScreen from './components/SuccessScreen.jsx';
 import DoctorQueue from './components/DoctorQueue.jsx';
-import { analyse } from './demoModel.js';
-import { rasterise } from './fundus.js';
+import { analyse, getSamples, loadSamples } from './demoModel.js';
 import { composeScan, generateReport } from './report.js';
-import { getCase, getCaseImage, getSimilarImage, initialiseApi, isDemoMode } from './api.js';
+import {
+  getCase,
+  getCaseImage,
+  getSimilarImage,
+  hasRecordedDemo,
+  initialiseApi,
+  isDemoMode,
+  loadRecordedDemo,
+} from './api.js';
 
 const STEP_INDEX = { upload: 0, quality: 1, results: 2, success: 3 };
 const readFile = (file) =>
@@ -28,6 +35,9 @@ export default function App() {
   const [mock, setMock] = useState(false);
   const [modelVersion, setModelVersion] = useState('');
   const [notice, setNotice] = useState('');
+  const [samples, setSamples] = useState([]);
+  const [offline, setOffline] = useState(false);
+  const [recordedAt, setRecordedAt] = useState('');
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
   const [review, setReview] = useState(false);
@@ -35,12 +45,18 @@ export default function App() {
   const markMock = useCallback(() => setMock(true), []);
   useEffect(() => {
     let active = true;
-    initialiseApi()
-      .then((connection) => {
+    Promise.all([initialiseApi(), loadSamples()])
+      .then(([connection, recorded]) => {
         if (!active) return;
-        setMock(connection.demo || connection.health.model.mock);
-        setModelVersion(connection.health.model?.version ?? '');
-        setNotice(connection.notice);
+        setSamples(getSamples());
+        // No API here: replay recorded real-model outputs if we have them, else fixtures (mock).
+        const replay = connection.demo && recorded !== null;
+        if (replay && !hasRecordedDemo()) loadRecordedDemo(recorded);
+        setOffline(replay);
+        setMock(replay ? recorded.model.mock : connection.health.model.mock || connection.demo);
+        setModelVersion(replay ? recorded.model.version : (connection.health.model?.version ?? ''));
+        setNotice(replay ? '' : connection.notice);
+        setRecordedAt(replay ? recorded.recorded_at.slice(0, 10) : '');
         setReady(true);
         setError('');
       })
@@ -71,18 +87,15 @@ export default function App() {
       setBusy(false);
     }
   }
-  async function pickSample(sample) {
+  function pickSample(sample) {
     setError('');
-    setBusy(true);
-    try {
-      // Preserve SVG only in fixture mode. Live requests always send a PNG File.
-      const image = isDemoMode() ? sample.image : await rasterise(sample.image);
-      setScan({ image, name: 'Synthetic sample', caption: sample.caption, sampleId: sample.id });
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setBusy(false);
-    }
+    setScan({
+      image: sample.image,
+      name: `${sample.label}.jpg`,
+      caption: sample.caption,
+      sampleId: sample.id,
+      officialGrade: sample.officialGrade,
+    });
   }
   async function startAnalysis(options) {
     if (!scan || busy) return;
@@ -162,7 +175,7 @@ export default function App() {
           scanImage,
           originalImage,
           similarImages,
-          mock: mock || isDemoMode() || result.model.mock,
+          mock: mock || result.model.mock,
         };
         await generateReport(report);
         reportRef.current = report;
@@ -210,9 +223,16 @@ export default function App() {
         disabled={busy || !ready}
         modelVersion={modelVersion}
       />
-      {(mock || isDemoMode()) && (
+      {mock && (
         <div className="mock-banner" role="status">
           Mock model: outputs are not real predictions.
+        </div>
+      )}
+      {offline && (
+        <div className="offline-banner" role="status">
+          <strong>Offline demo.</strong> No live model is connected to this site. The sample photos
+          replay outputs recorded from model {modelVersion} on {recordedAt}. To grade your own photos,
+          run the app with the model (see README).
         </div>
       )}
       <main className="main" aria-busy={busy}>
@@ -254,6 +274,7 @@ export default function App() {
             {screen === 'upload' && (
               <>
                 <UploadScreen
+                  samples={samples}
                   scan={scan}
                   onPickFile={pickFile}
                   onPickSample={pickSample}

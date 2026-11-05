@@ -77,13 +77,19 @@ export async function initialiseApi() {
   try {
     return { health: await getHealth(), demo, notice: '' };
   } catch (error) {
-    if (!(error instanceof NetworkError)) throw error;
+    // The real API always answers with a JSON error envelope (it sets `code`). A plain 404,
+    // an HTML page or invalid JSON means there is no RetinaScan API at this address, e.g. on a
+    // static host such as Vercel. In that case run the bundled demo instead of failing.
+    const noApiHere =
+      error instanceof NetworkError ||
+      (error instanceof ApiError && (!error.code || error.code === 'invalid_response'));
+    if (!noApiHere) throw error;
     demo = true;
     return {
       health: copy(healthFixture),
       demo: true,
       notice:
-        'API health check unreachable. Switched to fixture demo mode; changes last only for this page session.',
+        'No live model is connected to this site. Showing the offline demo: bundled sample photos with recorded results. Changes last only for this page session.',
     };
   }
 }
@@ -208,11 +214,60 @@ export async function postDecision(id, decision) {
   return remember(c);
 }
 export async function getCaseImage(id) {
-  return demo ? null : request(`/cases/${encodeURIComponent(id)}/image`, {}, true);
+  if (demo) {
+    const url = recordedUrls.get(id);
+    return url ? (await fetch(url)).blob() : null;
+  }
+  return request(`/cases/${encodeURIComponent(id)}/image`, {}, true);
 }
 export async function getSimilarImage(id) {
   return demo ? null : request(`/similar/${encodeURIComponent(id)}.jpg`, {}, true);
 }
 export async function getOperatingCurve() {
   return demo ? copy(curveFixture) : request('/operating-curve');
+}
+
+// ---- Offline demo: replay RECORDED outputs of the real model -------------------------
+// On a static host (no API) the app replays exact /api/analyse responses recorded from the
+// real model for bundled sample photos (scripts/record_samples.py). Nothing is invented: if
+// recorded.json is missing, the plain fixture demo (with the mock banner) is used instead.
+let recorded = null;
+const recordedUrls = new Map(); // case_id -> bundled photo URL
+export const hasRecordedDemo = () => recorded !== null;
+const priorityOf = (id) => details.get(id)?.priority ?? -1;
+function addRecorded(sample, caseId, createdAt, overrides = {}) {
+  const c = copy(sample.case);
+  Object.assign(c, { case_id: caseId, created_at: createdAt, ...overrides });
+  c.image_url = `/samples/${sample.file}`;
+  recordedUrls.set(caseId, c.image_url);
+  const stored = remember(c);
+  if (c.status === 'pending') {
+    pendingOrder.push(caseId);
+    pendingOrder.sort(
+      (a, b) =>
+        priorityOf(b) - priorityOf(a) ||
+        String(details.get(a)?.created_at).localeCompare(String(details.get(b)?.created_at)),
+    );
+  }
+  return stored;
+}
+export function loadRecordedDemo(data) {
+  recorded = data;
+  details.clear();
+  summaries = [];
+  pendingOrder.length = 0;
+  reviewedOrder = [];
+  for (const sample of data.samples) addRecorded(sample, sample.case.case_id, sample.case.created_at);
+}
+export function analyseRecorded(sampleId, { patient_id, eye = 'unknown' } = {}) {
+  const sample = recorded?.samples.find((s) => s.id === sampleId);
+  if (!sample) throw new ApiError('No recorded result for this sample photo.', 'not_found', 404);
+  const overrides = { eye };
+  if (patient_id?.trim()) overrides.patient_id = patient_id.trim();
+  return addRecorded(
+    sample,
+    `demo_${crypto.randomUUID().slice(0, 8)}`,
+    new Date().toISOString(),
+    overrides,
+  );
 }

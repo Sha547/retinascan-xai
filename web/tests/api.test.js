@@ -81,7 +81,7 @@ test('unreachable health enables demo with a visible notice; HTTP errors stay er
   };
   const connection = await a.initialiseApi();
   assert.equal(connection.demo, true);
-  assert.match(connection.notice, /unreachable/);
+  assert.match(connection.notice, /No live model/);
   a = await api('');
   globalThis.fetch = async () =>
     new Response(
@@ -146,20 +146,34 @@ test('all pending cases can be reviewed into an empty queue without touching ret
   assert.equal((await a.getHealth()).model.mock, true);
 });
 
-test('malformed reachable health response is an error, not a fixture fallback', async () => {
+test('a non-API answer (static host 404, HTML, invalid JSON) runs the offline demo', async () => {
+  for (const response of [
+    () => new Response('The page could not be found', { status: 404 }),
+    () => new Response('<!doctype html><html></html>', { status: 200 }),
+    () => new Response('not JSON', { status: 200 }),
+  ]) {
+    const a = await api('');
+    globalThis.fetch = async () => response();
+    const connection = await a.initialiseApi();
+    assert.equal(connection.demo, true);
+    assert.match(connection.notice, /No live model/);
+  }
+  // A real API 404 carries an envelope and must stay an error.
   const a = await api('');
-  globalThis.fetch = async () => new Response('not JSON', { status: 200 });
-  await assert.rejects(a.initialiseApi(), { message: 'The API returned invalid JSON.' });
+  globalThis.fetch = async () =>
+    new Response(JSON.stringify({ error: { code: 'not_found', message: 'Not here.' } }), {
+      status: 404,
+    });
+  await assert.rejects(a.initialiseApi(), { message: 'Not here.', status: 404 });
   assert.equal(a.isDemoMode(), false);
 });
-
 test('proxy gateway failures trigger fixture fallback, while API envelopes stay visible', async () => {
   for (const status of [502, 504]) {
     const a = await api('');
     globalThis.fetch = async () => new Response('Bad gateway', { status });
     const connection = await a.initialiseApi();
     assert.equal(connection.demo, true);
-    assert.match(connection.notice, /unreachable/);
+    assert.match(connection.notice, /No live model/);
   }
   const a = await api('');
   globalThis.fetch = async () =>

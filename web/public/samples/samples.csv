@@ -1,0 +1,11 @@
+file,idrid_image,official_grade,degraded
+idrid_test_IDRiD_001.jpg,IDRiD_001,4,0
+idrid_test_IDRiD_002.jpg,IDRiD_002,4,0
+idrid_test_IDRiD_006.jpg,IDRiD_006,3,0
+idrid_test_IDRiD_007.jpg,IDRiD_007,3,0
+idrid_test_IDRiD_008.jpg,IDRiD_008,2,0
+idrid_test_IDRiD_009.jpg,IDRiD_009,2,0
+idrid_test_IDRiD_063.jpg,IDRiD_063,1,0
+idrid_test_IDRiD_029.jpg,IDRiD_029,0,0
+idrid_test_IDRiD_030.jpg,IDRiD_030,0,0
+idrid_test_IDRiD_030_degraded.jpg,IDRiD_030,0,1

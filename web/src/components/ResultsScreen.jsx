@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { DocIcon } from './Icons.jsx';
-import { GRADE_LABELS, isDemoMode, percent } from '../api.js';
+import { GRADE_LABELS, percent } from '../api.js';
 import CaseImage from './CaseImage.jsx';
 import DecisionPanel from './DecisionPanel.jsx';
 import RecordHeader from './RecordHeader.jsx';
@@ -85,8 +85,7 @@ export default function ResultsScreen({
   const p = result.prediction;
   const evidence = result.evidence;
   const tone = p.abstained ? 'tone-amber' : p.referable ? 'tone-red' : 'tone-green';
-  const synthetic = isDemoMode() && scan?.sampleId;
-  const showOverlay = view !== 'original' && (synthetic || imageReady);
+  const showOverlay = view !== 'original' && imageReady;
   return (
     <div className="screen">
       <RecordHeader result={result} onBack={onBack} busy={busy} />
@@ -132,16 +131,12 @@ export default function ResultsScreen({
             </div>
             <div className="panel-body">
               <div className="scan-frame" style={{ aspectRatio: ratio }}>
-                {synthetic ? (
-                  <img src={scan.image} alt="Synthetic fundus illustration" />
-                ) : (
-                  <CaseImage
-                    id={result.case_id}
-                    alt="Uploaded fundus photograph"
-                    onSize={setRatio}
-                    onReady={setImageReady}
-                  />
-                )}
+                <CaseImage
+                  id={result.case_id}
+                  alt="Fundus photograph"
+                  onSize={setRatio}
+                  onReady={setImageReady}
+                />
                 {evidence?.heatmap_png && showOverlay && (
                   <img
                     src={evidence.heatmap_png}
@@ -187,10 +182,6 @@ export default function ResultsScreen({
                   For a No DR result, highlighted regions are not findings: they show what the model
                   weighed, not abnormalities.
                 </p>
-              )}
-              {synthetic && <p className="caption">Synthetic illustration with fixture output.</p>}
-              {isDemoMode() && !synthetic && (
-                <p className="caption">Fixture case images are not included in demo mode.</p>
               )}
             </div>
           </section>
@@ -243,6 +234,19 @@ export default function ResultsScreen({
                   <span className="figure-value num">{percent(p.confidence)}</span>
                 </div>
               </div>
+
+              {scan?.officialGrade != null && (
+                <p className="reference-grade">
+                  Reference: IDRiD official grade{' '}
+                  <strong>
+                    <span className="num">{scan.officialGrade}</span>{' '}
+                    {GRADE_LABELS[scan.officialGrade]}
+                  </strong>
+                  {scan.officialGrade === p.grade
+                    ? ' (model agrees)'
+                    : ' (model differs; shown for comparison, not used by the model)'}
+                </p>
+              )}
 
               <h3 className="subhead">Grade probabilities (calibrated)</h3>
               <ProbabilityTable probs={p.probs} grade={p.grade} />

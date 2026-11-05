@@ -1,0 +1,20 @@
+Sample photos in this folder are from the Indian Diabetic Retinopathy Image Dataset (IDRiD),
+official disease-grading TEST set, resized to 1024 px. Licence: CC BY 4.0
+(https://creativecommons.org/licenses/by/4.0/). Changes: resized and re-encoded as JPEG;
+idrid_test_IDRiD_030_degraded.jpg is additionally darkened and blurred on purpose.
+
+Porwal P, Pachade S, Kokare M, et al. Indian Diabetic Retinopathy Image Dataset (IDRiD).
+IEEE DataPort, 2018. doi:10.21227/H25W98
+Porwal P, et al. Indian Diabetic Retinopathy Image Dataset (IDRiD): A Database for Diabetic
+Retinopathy Screening Research. Data 3(3):25, 2018. doi:10.3390/data3030025
+
+Licence notice shipped with the dataset:
+IDRiD dataset (c) by Prasanna Porwal, Samiksha Pachade and Manesh Kokare. 
+
+
+The IDRiD dataset is licensed under a 
+Creative Commons Attribution 4.0 International License.
+
+
+You should have received a copy of the license along with this 
+work. If not, see <http://creativecommons.org/licenses/by/4.0/>.

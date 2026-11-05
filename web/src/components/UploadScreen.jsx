@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react';
-import { SAMPLES } from '../demoModel.js';
 import { UploadIcon } from './Icons.jsx';
 
 function fileSize(bytes) {
@@ -32,19 +31,23 @@ function CaptureGuidance() {
   );
 }
 
-function FixtureSamples({ scan, busy, onPickSample }) {
+function SamplePhotos({ samples, scan, busy, onPickSample, demo }) {
+  if (!samples.length) return null;
   return (
     <aside className="panel samples" aria-labelledby="samples-title">
       <div className="panel-head">
-        <h2 id="samples-title">Fixture samples (demo)</h2>
+        <h2 id="samples-title">Sample photos</h2>
       </div>
       <div className="panel-body">
         <p className="muted">
-          Synthetic illustrations, not patient photographs. Each loads a fixed fixture outcome that
-          does not describe the image.
+          Real fundus photographs from the IDRiD test set (CC BY 4.0), not used in training. The
+          official grade is shown so you can compare it with the model.{' '}
+          {demo
+            ? 'Here they replay outputs recorded from the real model.'
+            : 'They are graded live by the model.'}
         </p>
         <div className="sample-list">
-          {SAMPLES.map((s) => (
+          {samples.map((s) => (
             <button
               key={s.id}
               type="button"
@@ -67,6 +70,7 @@ function FixtureSamples({ scan, busy, onPickSample }) {
 }
 
 export default function UploadScreen({
+  samples = [],
   scan,
   onPickFile,
   onPickSample,
@@ -79,7 +83,6 @@ export default function UploadScreen({
   const inputRef = useRef(null);
   const [patientId, setPatientId] = useState('');
   const [eye, setEye] = useState('unknown');
-  const [outcome, setOutcome] = useState('graded');
 
   function handleDrop(e) {
     e.preventDefault();
@@ -129,7 +132,7 @@ export default function UploadScreen({
                   )}
                   <div>
                     <dt>Source</dt>
-                    <dd>{scan.sampleId ? 'Synthetic fixture sample' : 'Local file'}</dd>
+                    <dd>{scan.sampleId ? 'IDRiD sample photo (CC BY 4.0)' : 'Local file'}</dd>
                   </div>
                   <div className="preview-actions">
                     <button type="button" className="btn btn-small" onClick={choose}>
@@ -180,23 +183,13 @@ export default function UploadScreen({
                   <option value="right">Right</option>
                 </select>
               </label>
-              {demo && (
-                <label className="field">
-                  <span>Fixture outcome for uploaded files</span>
-                  <select value={outcome} onChange={(e) => setOutcome(e.target.value)}>
-                    <option value="graded">Graded fixture</option>
-                    <option value="abstained">Abstained fixture</option>
-                    <option value="retake">Retake fixture</option>
-                  </select>
-                </label>
-              )}
             </div>
             <div className="action-row">
               <button
                 type="button"
                 className="btn btn-primary"
                 disabled={!scan || busy}
-                onClick={() => onAnalyse({ patient_id: patientId, eye, outcome })}
+                onClick={() => onAnalyse({ patient_id: patientId, eye })}
               >
                 Analyse image
               </button>
@@ -210,11 +203,16 @@ export default function UploadScreen({
             </div>
           </div>
         </section>
-        {demo ? (
-          <FixtureSamples scan={scan} busy={busy} onPickSample={onPickSample} />
-        ) : (
+        <div className="side-stack">
+          <SamplePhotos
+            samples={samples}
+            scan={scan}
+            busy={busy}
+            onPickSample={onPickSample}
+            demo={demo}
+          />
           <CaptureGuidance />
-        )}
+        </div>
       </div>
     </div>
   );

@@ -25,6 +25,9 @@ STAGES = {
                "quality_cmd": []},
     # Grad-CAM rim audit on test images + export of chosen demo images (no training).
     "audit": {"from_kernel": "retinascan-full", "export_ids": ""},
+    # Real IDRiD (CC BY 4.0) sample photos for the demo; CPU only, no model.
+    "samples": {"ext_dataset": "aaryapatel98/indian-diabetic-retinopathy-image-dataset",
+                "per_grade": {"0": 2, "1": 1, "2": 2, "3": 2, "4": 2}, "side": 1024},
 }
 DEFAULTS = {"arch": "efficientnet_b0", "clahe": True, "lr": 3e-4, "workers": 4,
             "target_sens": 0.90, "target_coverage": 0.85}
@@ -65,7 +68,8 @@ def main():
             tar.add(p, arcname=p.name)
     code = base64.b64encode(buf.getvalue()).decode()
 
-    tpl_name = {"phase2": "phase2_template.py", "audit": "audit_template.py"}.get(a.stage, "kernel_template.py")
+    tpl_name = {"phase2": "phase2_template.py", "audit": "audit_template.py",
+                "samples": "samples_template.py"}.get(a.stage, "kernel_template.py")
     tpl = (ROOT / "kaggle" / tpl_name).read_text()
     script = (tpl.replace("__STAGE__", a.stage).replace("__CONFIG__", json.dumps(cfg))
               .replace("__CODE_B64__", code))
@@ -80,7 +84,7 @@ def main():
         "language": "python",
         "kernel_type": "script",
         "is_private": True,
-        "enable_gpu": True,
+        "enable_gpu": a.stage != "samples",
         "enable_internet": True,  # timm downloads ImageNet weights
         "dataset_sources": [cfg["ext_dataset"]] if cfg.get("ext_dataset") else [],
         "competition_sources": ["aptos2019-blindness-detection"],

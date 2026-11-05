@@ -26,8 +26,8 @@ export default function CaseImage({ id, similar = false, alt, className = '', on
         {state.error ||
           (state.loading
             ? 'Loading image…'
-            : isDemoMode()
-              ? 'Image unavailable in fixture demo'
+            : similar && isDemoMode()
+              ? 'Training image not published here (APTOS data licence); grade and distance below'
               : 'Image unavailable')}
       </div>
     );

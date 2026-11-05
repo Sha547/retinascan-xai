@@ -74,6 +74,23 @@ GPU training is not bit-for-bit deterministic, so a retrained model will give
 slightly different numbers. The shipped numbers come from the run named in
 `RESULTS.md`.
 
+## Sample photos (in the app) and the offline demo
+
+The app ships 10 real fundus photographs in `web/public/samples/`: IDRiD official
+test-set images (CC BY 4.0, attribution in `web/public/samples/ATTRIBUTION.txt`),
+picked as the first images of each grade in the official list, never used for
+training, plus one deliberately darkened and blurred copy. The official grade is shown
+next to the model's output, so the model's misses are visible too.
+
+- **With the API running** (`scripts/start.sh`), the sample photos and your own photos
+  are graded live by the model.
+- **Without an API** (for example the Vercel deployment), the app runs an *offline
+  demo*. It replays the exact API responses recorded from the real model for those
+  photos (`web/public/samples/recorded.json`, made by `scripts/record_samples.py`;
+  re-run it after changing the model). Your own photos cannot be graded there.
+  Similar-case thumbnails are APTOS training images, which are not redistributed, so
+  only their grades and distances are shown.
+
 ## Demo images
 
 `demo_images/` (gitignored; APTOS images are not redistributed) holds held-out

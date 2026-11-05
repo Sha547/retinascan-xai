@@ -2,6 +2,19 @@ import { useEffect, useState } from 'react';
 import { getCases } from '../api.js';
 import HistoryList from './HistoryList.jsx';
 
+const FILTERS = [
+  ['pending', 'Pending'],
+  ['reviewed', 'Reviewed'],
+  ['retake', 'Retake'],
+  ['all', 'All'],
+];
+const EMPTY = {
+  pending: 'No cases waiting for review.',
+  reviewed: 'No reviewed cases yet.',
+  retake: 'No cases need a retake.',
+  all: 'No screenings recorded yet.',
+};
+
 export default function DoctorQueue({ onOpen, onMock, history = false }) {
   const [filter, setFilter] = useState(history ? 'all' : 'pending');
   const [refresh, setRefresh] = useState(0);
@@ -28,46 +41,56 @@ export default function DoctorQueue({ onOpen, onMock, history = false }) {
     setFilter(nextFilter);
     setRefresh((n) => n + 1);
   }
+  const Title = history ? 'h2' : 'h1';
   return (
-    <section className={`card queue ${history ? 'history' : 'screen'}`}>
-      <div className="queue-head">
-        {history ? <h2>Recent screenings</h2> : <h1>Doctor queue</h1>}
-        <button className="btn btn-ghost" onClick={() => reload()}>
-          Refresh {history ? 'screenings' : 'queue'}
+    <section
+      className={`panel queue ${history ? 'history' : 'screen'}`}
+      aria-labelledby={`${history ? 'history' : 'queue'}-title`}
+    >
+      <div className="panel-head">
+        <Title id={`${history ? 'history' : 'queue'}-title`}>
+          {history ? 'Recent screenings' : 'Doctor queue'}
+        </Title>
+        <button type="button" className="btn btn-small" onClick={() => reload()}>
+          Refresh
         </button>
       </div>
-      {!history && (
-        <div className="seg queue-filters" role="group" aria-label="Case status">
-          {['pending', 'reviewed', 'retake', 'all'].map((s) => (
-            <button
-              key={s}
-              className={`seg-btn ${filter === s ? 'active' : ''}`}
-              aria-pressed={filter === s}
-              onClick={() => reload(s)}
-            >
-              {s[0].toUpperCase() + s.slice(1)}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="queue-bar">
+        {!history && (
+          <div className="seg" role="group" aria-label="Case status">
+            {FILTERS.map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                className={filter === id ? 'active' : ''}
+                aria-pressed={filter === id}
+                onClick={() => reload(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+        {data && (
+          <span className="muted num">
+            {data.total} {data.total === 1 ? 'case' : 'cases'}
+            {data.total > data.cases.length && `, showing ${data.cases.length}`}
+            {!history && filter === 'pending' && ' · ordered by triage priority'}
+          </span>
+        )}
+      </div>
       {error ? (
-        <p className="notice error" role="alert">
+        <p className="callout tone-red" role="alert">
           {error}
         </p>
       ) : !data ? (
-        <p role="status">Loading screenings…</p>
+        <p className="panel-body muted" role="status">
+          Loading cases…
+        </p>
+      ) : data.cases.length ? (
+        <HistoryList entries={data.cases} onOpen={onOpen} numbered={!history} />
       ) : (
-        <>
-          <p className="queue-count">
-            {data.total} {history ? 'screenings' : `${filter} cases`}
-            {data.total > data.cases.length && ` · showing ${data.cases.length}`}
-          </p>
-          {data.cases.length ? (
-            <HistoryList entries={data.cases} onOpen={onOpen} />
-          ) : (
-            <p className="empty-state">No {filter === 'all' ? '' : `${filter} `}screenings.</p>
-          )}
-        </>
+        <p className="empty-state">{EMPTY[filter]}</p>
       )}
     </section>
   );

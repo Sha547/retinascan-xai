@@ -210,14 +210,6 @@ img {
   font-size: 13px;
 }
 
-.offline-banner {
-  padding: 7px 20px;
-  background: #eef2f7;
-  border-bottom: 1px solid var(--line);
-  color: var(--ink);
-  font-size: 13px;
-}
-
 /* ---------- page ---------- */
 
 .main {

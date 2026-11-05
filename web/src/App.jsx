@@ -36,8 +36,6 @@ export default function App() {
   const [modelVersion, setModelVersion] = useState('');
   const [notice, setNotice] = useState('');
   const [samples, setSamples] = useState([]);
-  const [offline, setOffline] = useState(false);
-  const [recordedAt, setRecordedAt] = useState('');
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
   const [review, setReview] = useState(false);
@@ -52,11 +50,9 @@ export default function App() {
         // No API here: replay recorded real-model outputs if we have them, else fixtures (mock).
         const replay = connection.demo && recorded !== null;
         if (replay && !hasRecordedDemo()) loadRecordedDemo(recorded);
-        setOffline(replay);
         setMock(replay ? recorded.model.mock : connection.health.model.mock || connection.demo);
         setModelVersion(replay ? recorded.model.version : (connection.health.model?.version ?? ''));
         setNotice(replay ? '' : connection.notice);
-        setRecordedAt(replay ? recorded.recorded_at.slice(0, 10) : '');
         setReady(true);
         setError('');
       })
@@ -226,13 +222,6 @@ export default function App() {
       {mock && (
         <div className="mock-banner" role="status">
           Mock model: outputs are not real predictions.
-        </div>
-      )}
-      {offline && (
-        <div className="offline-banner" role="status">
-          <strong>Offline demo.</strong> No live model is connected to this site. The sample photos
-          replay outputs recorded from model {modelVersion} on {recordedAt}. To grade your own photos,
-          run the app with the model (see README).
         </div>
       )}
       <main className="main" aria-busy={busy}>

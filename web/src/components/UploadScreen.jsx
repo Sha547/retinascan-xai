@@ -1,6 +1,70 @@
 import { useRef, useState } from 'react';
 import { SAMPLES } from '../demoModel.js';
-import { CheckIcon, ScanIcon, UploadIcon } from './Icons.jsx';
+import { UploadIcon } from './Icons.jsx';
+
+function fileSize(bytes) {
+  if (bytes == null) return null;
+  return bytes >= 1024 * 1024
+    ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+function CaptureGuidance() {
+  return (
+    <aside className="panel guidance" aria-labelledby="guidance-title">
+      <div className="panel-head">
+        <h2 id="guidance-title">Capture guidance</h2>
+      </div>
+      <div className="panel-body">
+        <p>Every image is checked for quality before grading. To avoid a retake:</p>
+        <ul>
+          <li>Even illumination: not too dark, not overexposed.</li>
+          <li>In focus: blood vessels look sharp, no motion blur.</li>
+          <li>Whole retina in frame, roughly centred.</li>
+          <li>No glare or flash reflections on the retina.</li>
+          <li>Upload the original JPEG or PNG from the camera (up to 15 MB).</li>
+        </ul>
+        <p className="muted">
+          If the check fails, the reasons are listed and the photo should be retaken.
+        </p>
+      </div>
+    </aside>
+  );
+}
+
+function FixtureSamples({ scan, busy, onPickSample }) {
+  return (
+    <aside className="panel samples" aria-labelledby="samples-title">
+      <div className="panel-head">
+        <h2 id="samples-title">Fixture samples (demo)</h2>
+      </div>
+      <div className="panel-body">
+        <p className="muted">
+          Synthetic illustrations, not patient photographs. Each loads a fixed fixture outcome that
+          does not describe the image.
+        </p>
+        <div className="sample-list">
+          {SAMPLES.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              className={`sample ${scan?.sampleId === s.id ? 'selected' : ''}`}
+              aria-pressed={scan?.sampleId === s.id}
+              disabled={busy}
+              onClick={() => onPickSample(s)}
+            >
+              <img src={s.image} alt="" />
+              <span>
+                <span className="sample-label">{s.label}</span>
+                <span className="sample-caption">{s.caption}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </aside>
+  );
+}
 
 export default function UploadScreen({
   scan,
@@ -23,29 +87,19 @@ export default function UploadScreen({
     const file = e.dataTransfer.files?.[0];
     if (file) onPickFile(file);
   }
+  const choose = () => inputRef.current?.click();
 
   return (
     <div className="screen">
-      <div className="section-head">
-        <span className="eyebrow">Step 1 · Image acquisition</span>
-        <h1>Upload a retinal fundus image</h1>
-        <p>
-          Drop a fundus photograph captured at the screening camera, or load one of the demo scans
-          below to walk through the full pipeline.
-        </p>
+      <div className="page-head">
+        <h1>New screening</h1>
       </div>
-
       <div className="upload-grid">
-        <div>
-          <div
-            className={`dropzone ${dragging ? 'dragging' : ''} ${scan ? 'has-image' : ''}`}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragging(true);
-            }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={handleDrop}
-          >
+        <section className="panel" aria-labelledby="upload-title">
+          <div className="panel-head">
+            <h2 id="upload-title">Fundus photograph</h2>
+          </div>
+          <div className="panel-body">
             <input
               ref={inputRef}
               type="file"
@@ -59,145 +113,108 @@ export default function UploadScreen({
                 e.target.value = '';
               }}
             />
-
             {scan ? (
               <div className="preview">
-                <img className="preview-thumb" src={scan.image} alt="Selected retinal scan" />
-                <div className="preview-meta">
-                  <p className="preview-name">{scan.name}</p>
-                  <div className="preview-rows">
-                    <div>
-                      <span>Source</span>
-                      <span>{scan.sampleId ? 'Synthetic sample' : 'Local upload'}</span>
-                    </div>
-                    <div>
-                      <span>Eye / field</span>
-                      <span>{scan.caption}</span>
-                    </div>
-                    <div>
-                      <span>Status</span>
-                      <span>Ready for analysis</span>
-                    </div>
+                <img className="preview-thumb" src={scan.image} alt="Selected fundus image" />
+                <dl className="kv">
+                  <div>
+                    <dt>File</dt>
+                    <dd className="break">{scan.name}</dd>
                   </div>
-                  <div style={{ display: 'flex', gap: 14, marginTop: 16 }}>
-                    <button
-                      type="button"
-                      className="link-btn"
-                      onClick={() => inputRef.current?.click()}
-                    >
-                      Replace image
+                  {scan.file && (
+                    <div>
+                      <dt>Size</dt>
+                      <dd className="num">{fileSize(scan.file.size)}</dd>
+                    </div>
+                  )}
+                  <div>
+                    <dt>Source</dt>
+                    <dd>{scan.sampleId ? 'Synthetic fixture sample' : 'Local file'}</dd>
+                  </div>
+                  <div className="preview-actions">
+                    <button type="button" className="btn btn-small" onClick={choose}>
+                      Change image
                     </button>
-                    <button type="button" className="link-btn" onClick={onClear}>
+                    <button type="button" className="btn btn-small" onClick={onClear}>
                       Remove
                     </button>
                   </div>
-                </div>
+                </dl>
               </div>
             ) : (
-              <div>
-                <div className="dz-icon">
-                  <UploadIcon />
-                </div>
-                <p className="dz-title">Drag and drop a fundus image</p>
-                <p className="dz-sub">
-                  or{' '}
-                  <button
-                    type="button"
-                    className="link-btn"
-                    onClick={() => inputRef.current?.click()}
-                  >
-                    browse your files
+              <div
+                className={`dropzone ${dragging ? 'dragging' : ''}`}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragging(true);
+                }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={handleDrop}
+              >
+                <UploadIcon />
+                <p>
+                  Drag a fundus image here or{' '}
+                  <button type="button" className="link-btn" onClick={choose}>
+                    choose a file
                   </button>
                 </p>
-                <p className="dz-hint">JPEG or PNG · up to 15 MB</p>
+                <p className="muted">JPEG or PNG, up to 15 MB</p>
               </div>
             )}
-          </div>
 
-          <div className="upload-fields">
-            <label>
-              Patient ID (optional)
-              <input
-                value={patientId}
-                onChange={(e) => setPatientId(e.target.value)}
-                placeholder="Generated by the API if blank"
-              />
-            </label>
-            <label>
-              Eye
-              <select value={eye} onChange={(e) => setEye(e.target.value)}>
-                <option value="unknown">Unknown</option>
-                <option value="left">Left</option>
-                <option value="right">Right</option>
-              </select>
-            </label>
-            {demo && (
-              <label>
-                Demo outcome for uploaded files
-                <select value={outcome} onChange={(e) => setOutcome(e.target.value)}>
-                  <option value="graded">Graded fixture</option>
-                  <option value="abstained">Abstained fixture</option>
-                  <option value="retake">Retake fixture</option>
+            <div className="form-row">
+              <label className="field">
+                <span>Patient ID</span>
+                <input
+                  className="mono"
+                  value={patientId}
+                  onChange={(e) => setPatientId(e.target.value)}
+                  placeholder="Optional; generated if blank"
+                />
+              </label>
+              <label className="field field-narrow">
+                <span>Eye</span>
+                <select value={eye} onChange={(e) => setEye(e.target.value)}>
+                  <option value="unknown">Unknown</option>
+                  <option value="left">Left</option>
+                  <option value="right">Right</option>
                 </select>
               </label>
-            )}
-          </div>
-          <div className="action-row">
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={!scan || busy}
-              onClick={() => onAnalyse({ patient_id: patientId, eye, outcome })}
-            >
-              <ScanIcon width={17} height={17} />
-              Analyse Image
-            </button>
-            <span className="action-note">
-              {busy
-                ? 'Preparing image…'
-                : scan
-                  ? 'Runs quality check, then grading and saliency mapping.'
-                  : 'Select an image to enable analysis.'}
-            </span>
-          </div>
-        </div>
-
-        <aside className="card samples">
-          <h3>Synthetic sample scans</h3>
-          <p>
-            {demo
-              ? 'Choose a fixture outcome for the walkthrough.'
-              : 'Illustrations rasterised and uploaded to the API; outcomes are determined by the service.'}
-          </p>
-          <div className="sample-list">
-            {SAMPLES.map((s, index) => (
+              {demo && (
+                <label className="field">
+                  <span>Fixture outcome for uploaded files</span>
+                  <select value={outcome} onChange={(e) => setOutcome(e.target.value)}>
+                    <option value="graded">Graded fixture</option>
+                    <option value="abstained">Abstained fixture</option>
+                    <option value="retake">Retake fixture</option>
+                  </select>
+                </label>
+              )}
+            </div>
+            <div className="action-row">
               <button
-                key={s.id}
                 type="button"
-                className={`sample ${scan?.sampleId === s.id ? 'selected' : ''}`}
-                disabled={busy}
-                onClick={() => onPickSample(s)}
+                className="btn btn-primary"
+                disabled={!scan || busy}
+                onClick={() => onAnalyse({ patient_id: patientId, eye, outcome })}
               >
-                <img src={s.image} alt="" />
-                <span>
-                  <span className="sample-label">
-                    {demo ? s.label : `Synthetic sample ${index + 1}`}
-                  </span>
-                  <br />
-                  <span className="sample-caption">{s.caption}</span>
-                </span>
-                <span className="sample-check">
-                  <CheckIcon width={16} height={16} />
-                </span>
+                Analyse image
               </button>
-            ))}
+              <span className="muted">
+                {busy
+                  ? 'Preparing image…'
+                  : scan
+                    ? 'Runs the quality check, then grading.'
+                    : 'Select an image to continue.'}
+              </span>
+            </div>
           </div>
-          <p className="footnote" style={{ marginTop: 18, textAlign: 'left' }}>
-            {demo
-              ? 'Fixture outputs are fake and do not describe the selected image.'
-              : 'Synthetic samples are illustrations, not patient photographs.'}
-          </p>
-        </aside>
+        </section>
+        {demo ? (
+          <FixtureSamples scan={scan} busy={busy} onPickSample={onPickSample} />
+        ) : (
+          <CaptureGuidance />
+        )}
       </div>
     </div>
   );

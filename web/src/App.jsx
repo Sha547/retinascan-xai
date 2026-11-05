@@ -26,6 +26,7 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
   const [mock, setMock] = useState(false);
+  const [modelVersion, setModelVersion] = useState('');
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
@@ -38,6 +39,7 @@ export default function App() {
       .then((connection) => {
         if (!active) return;
         setMock(connection.demo || connection.health.model.mock);
+        setModelVersion(connection.health.model?.version ?? '');
         setNotice(connection.notice);
         setReady(true);
         setError('');
@@ -149,6 +151,7 @@ export default function App() {
         const scanImage = image
           ? await composeScan({ image, heatmap: result.evidence?.heatmap_png, overlay: true })
           : null;
+        const originalImage = image ? await composeScan({ image }) : null;
         const similarImages = await Promise.all(
           (result.evidence?.similar ?? []).map(async (item) =>
             prepareImage(await getSimilarImage(item.id_code)),
@@ -157,6 +160,7 @@ export default function App() {
         const report = {
           result,
           scanImage,
+          originalImage,
           similarImages,
           mock: mock || isDemoMode() || result.model.mock,
         };
@@ -204,6 +208,7 @@ export default function App() {
         page={queuePage ? 'queue' : 'screening'}
         onNavigate={navigate}
         disabled={busy || !ready}
+        modelVersion={modelVersion}
       />
       {(mock || isDemoMode()) && (
         <div className="mock-banner" role="status">
@@ -212,19 +217,20 @@ export default function App() {
       )}
       <main className="main" aria-busy={busy}>
         {notice && (
-          <p className="notice" role="status">
+          <p className="callout tone-amber" role="status">
             {notice}
           </p>
         )}
         {error && (
-          <div className="notice error" role="alert">
+          <div className="callout tone-red" role="alert">
             {error}
             {!ready && (
-              <div className="review-actions" style={{ marginTop: 12 }}>
-                <button className="btn btn-ghost" onClick={() => setRetry((n) => n + 1)}>
+              <div className="action-row">
+                <button type="button" className="btn" onClick={() => setRetry((n) => n + 1)}>
                   Retry API connection
                 </button>
                 <button
+                  type="button"
                   className="btn btn-primary"
                   onClick={() => {
                     const url = new URL(window.location.href);
@@ -239,7 +245,7 @@ export default function App() {
           </div>
         )}
         {!ready ? (
-          <p role="status">
+          <p className="muted" role="status">
             {error ? 'Unable to connect to the API.' : 'Connecting to the screening service…'}
           </p>
         ) : (

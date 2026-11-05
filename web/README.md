@@ -1,8 +1,10 @@
 # RetinaScan XAI frontend
 
 React 19 + Vite screening and doctor-review prototype. API shapes follow
-`../docs/CONTRACT.md` v1.1. The existing visual system, overlay/split viewer and
-client-side jsPDF report are retained.
+`../docs/CONTRACT.md` v1.1. Plain React and CSS: system fonts only (no web-font
+downloads, so it works on a LAN without internet), neutral greys with one blue
+accent, and red/amber/green used only for status. Overlay/split viewer and a
+client-side jsPDF referral letter.
 
 ## Run against the API
 
@@ -24,13 +26,13 @@ VITE_API_PROXY=http://<3050-LAN-IP>:8000 npm run dev
 You can also set `VITE_API_PROXY` in an uncommitted `web/.env.local` and restart
 Vite. No Mac address or host is embedded in the app. Live uploads send the
 original JPEG/PNG as multipart `image`, optional `patient_id`, and `eye`.
-Synthetic samples are labelled illustrations and rasterised to PNG before live
-upload. Their live outcomes come entirely from the API.
+In live mode the upload screen shows capture guidance that mirrors the quality
+gate; the synthetic sample illustrations are shown only in fixture demo mode.
 
 ```bash
 npm run build
 npm run lint
-node --test tests/*.test.js
+npm test        # node --test tests/api.test.js
 ```
 
 `npm run preview` serves the built static app, but does not provide the dev
@@ -68,10 +70,11 @@ or overridden. A request for complete fixtures is recorded in `PROGRESS.md`.
 ## Walkthrough and checks
 
 - **Graded:** choose the graded fixture, analyse, inspect quality metrics, then
-  continue to results. Check all five probabilities, the referable decision,
+  choose **View result**. Check all five probabilities, the referable decision,
   verbatim recommendation, heatmap caption and similar-case grades/distances.
 - **Abstained:** choose the abstained fixture. The review-routing notice leads;
-  the grade is labelled tentative and displayed smaller.
+  the grade is labelled tentative and the referable decision reads "Pending
+  doctor review" with the model's tentative call.
 - **Retake:** choose the retake fixture. Reasons and measured quality values
   appear; no grade is displayed. Choose another image to continue.
 - **PDF:** download from a graded or abstained result. It includes case/patient
@@ -80,7 +83,7 @@ or overridden. A request for complete fixtures is recorded in `PROGRESS.md`.
   history. Missing fixture images remain placeholders. The report always uses
   the full heatmap; the screen's opacity and split controls are viewing aids.
 - **Doctor queue:** switch Pending / Reviewed / Retake / All. Open a case, enter
-  a reviewer name, Accept, then Override with a final grade. Check the decision
+  a reviewer name, save Accept, then Override with a final grade. Check the decision
   history, return to the queue and check its refreshed status/final grade.
   Retake cases cannot be accepted or overridden. Clear all pending cases to see
   the empty state. Recent screenings use `/api/cases?status=all` as well.

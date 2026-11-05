@@ -232,9 +232,9 @@ export async function generateReport({
     bold: true,
   });
 
-  heading('Fundus image', 90);
+  heading('Fundus image', 76);
   const imgW = (width - 8) / 2;
-  const imgH = 68;
+  const imgH = 58;
   ensure(imgH + 12);
   const top = y;
   picture(originalImage ?? null, margin, top, imgW, imgH);

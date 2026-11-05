@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-11-04T22:25:54+00:00",
-  "code_digest": "1cf740fcf046",
+  "generated_at": "2026-11-05T00:44:12+00:00",
+  "code_digest": "f8435af711c4",
   "model": {
     "version": "effnet-b0-512-exp1",
     "arch": "efficientnet_b0",
@@ -18,7 +18,8 @@
       "abstain_threshold",
       "model selection"
     ],
-    "test_used_for": "final scoring only, once",
+    "test_used_for": "measurement only, after every parameter was fixed on validation; never used for fitting, thresholds or model selection",
+    "abstain_rule": "abstain if max calibrated prob < abstain_threshold OR the grade and the referable call disagree (contract v1.2)",
     "tta": false
   },
   "calibration": {
@@ -107,13 +108,15 @@
     },
     "abstention": {
       "threshold": 0.5323888063430786,
-      "abstention_rate": 0.15009041591320071,
-      "n_graded": 470,
+      "abstention_rate": 0.15551537070524413,
+      "n_abstained_low_confidence": 83,
+      "n_abstained_conflict_only": 3,
+      "n_graded": 467,
       "accuracy_overall": 0.8481012658227848,
-      "accuracy_graded": 0.9,
+      "accuracy_graded": 0.9014989293361885,
       "qwk_overall": 0.9063053000163155,
-      "qwk_graded": 0.9361137319495306,
-      "referable_sensitivity_graded": 0.9464285714285714
+      "qwk_graded": 0.9365846088187938,
+      "referable_sensitivity_graded": 0.9578313253012049
     }
   },
   "test": {
@@ -192,13 +195,15 @@
     },
     "abstention": {
       "threshold": 0.5323888063430786,
-      "abstention_rate": 0.12454212454212454,
-      "n_graded": 478,
+      "abstention_rate": 0.13369963369963367,
+      "n_abstained_low_confidence": 68,
+      "n_abstained_conflict_only": 5,
+      "n_graded": 473,
       "accuracy_overall": 0.8076923076923077,
-      "accuracy_graded": 0.8577405857740585,
+      "accuracy_graded": 0.864693446088795,
       "qwk_overall": 0.8906106806631675,
-      "qwk_graded": 0.9233954451345756,
-      "referable_sensitivity_graded": 0.9470588235294117
+      "qwk_graded": 0.9258424068725924,
+      "referable_sensitivity_graded": 0.9526627218934911
     },
     "bootstrap_95ci": {
       "qwk": [
@@ -221,6 +226,19 @@
         0.7765567765567766,
         0.8406593406593407
       ]
+    },
+    "quality_gate": {
+      "reject_rate": 0.06227106227106227,
+      "n_passed": 512,
+      "n": 546,
+      "passed": {
+        "qwk": 0.894613635251027,
+        "accuracy": 0.8125,
+        "referable_sensitivity": 0.9326923076923077,
+        "referable_specificity": 0.9144736842105263,
+        "referable_auc": 0.9782309590080972,
+        "abstention_rate": 0.130859375
+      }
     }
   },
   "external": {
@@ -299,13 +317,15 @@
     },
     "abstention": {
       "threshold": 0.5323888063430786,
-      "abstention_rate": 0.25387596899224807,
-      "n_graded": 385,
+      "abstention_rate": 0.25775193798449614,
+      "n_abstained_low_confidence": 131,
+      "n_abstained_conflict_only": 2,
+      "n_graded": 383,
       "accuracy_overall": 0.5096899224806202,
-      "accuracy_graded": 0.5532467532467532,
+      "accuracy_graded": 0.5535248041775457,
       "qwk_overall": 0.7383994248105746,
-      "qwk_graded": 0.7715675803963451,
-      "referable_sensitivity_graded": 0.7077625570776256
+      "qwk_graded": 0.7716815699584448,
+      "referable_sensitivity_graded": 0.7142857142857143
     },
     "bootstrap_95ci": {
       "qwk": [
@@ -329,7 +349,20 @@
         0.5523255813953488
       ]
     },
-    "n_failed_images": 0
+    "n_failed_images": 0,
+    "quality_gate": {
+      "reject_rate": 0.03100775193798455,
+      "n_passed": 500,
+      "n": 516,
+      "passed": {
+        "qwk": 0.7403882718878282,
+        "accuracy": 0.506,
+        "referable_sensitivity": 0.729903536977492,
+        "referable_specificity": 0.9629629629629629,
+        "referable_auc": 0.9369842971129145,
+        "abstention_rate": 0.256
+      }
+    }
   },
   "external_drop": {
     "note": "test minus external; positive = worse on external",

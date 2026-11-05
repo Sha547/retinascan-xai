@@ -14,7 +14,7 @@ const gradeText = (g) => (g == null ? '—' : `${g} ${GRADE_LABELS[g]}`);
 
 export default function DecisionPanel({ result, onUpdated, onBusy }) {
   const [reviewer, setReviewer] = useState(lastReviewer);
-  const [action, setAction] = useState('accept');
+  const [action, setAction] = useState(''); // no default: the reviewer must choose (avoids automation bias)
   const [grade, setGrade] = useState('');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -24,6 +24,10 @@ export default function DecisionPanel({ result, onUpdated, onBusy }) {
   async function submit(event) {
     event.preventDefault();
     if (busy) return;
+    if (!action) {
+      setError('Choose Accept or Override.');
+      return;
+    }
     if (action === 'override' && grade === '') {
       setError('Select a final grade to override.');
       return;

@@ -92,8 +92,13 @@ export default function ResultsScreen({
       <RecordHeader result={result} onBack={onBack} busy={busy} />
       {p.abstained && (
         <div className="callout tone-amber" role="status">
-          <strong>Not confident: routed to doctor for review.</strong> The grade shown is the
-          model’s tentative grade; the referable decision is left to the reviewing doctor.
+          <strong>
+            {p.abstain_reason === 'grade_referral_conflict'
+              ? 'Grade and referral signals disagree: routed to doctor for review.'
+              : 'Not confident: routed to doctor for review.'}
+          </strong>{' '}
+          The grade shown is the model’s tentative grade; the referable decision is left to the
+          reviewing doctor.
         </div>
       )}
       {result.fixturePartial && (
@@ -177,6 +182,12 @@ export default function ResultsScreen({
               <p className="caption">
                 {evidence?.heatmap_note ?? 'Heatmap unavailable in this fixture.'}
               </p>
+              {evidence && p.grade === 0 && (
+                <p className="caption">
+                  For a No DR result, highlighted regions are not findings: they show what the model
+                  weighed, not abnormalities.
+                </p>
+              )}
               {synthetic && <p className="caption">Synthetic illustration with fixture output.</p>}
               {isDemoMode() && !synthetic && (
                 <p className="caption">Fixture case images are not included in demo mode.</p>
@@ -257,7 +268,7 @@ export default function ResultsScreen({
                   disabled={busy}
                 >
                   <DocIcon />
-                  {busy ? 'Preparing PDF…' : 'Download referral PDF'}
+                  {busy ? 'Preparing PDF…' : 'Download screening report (PDF)'}
                 </button>
                 <button type="button" className="btn" onClick={onReset} disabled={busy}>
                   New screening

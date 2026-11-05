@@ -1,4 +1,4 @@
-const STEPS = ['Upload', 'Quality check', 'Grading', 'Referral report'];
+const STEPS = ['Upload', 'Quality check', 'Grading', 'Report'];
 
 export default function Stepper({ current }) {
   return (

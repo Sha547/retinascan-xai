@@ -33,7 +33,7 @@ import pandas as pd
 import torch
 from sklearn.metrics import cohen_kappa_score, confusion_matrix, roc_auc_score
 
-from common import (GRADE_LABELS, NUM_CLASSES, REFERABLE_MIN_GRADE, load_checkpoint, load_rgb, make_dataset,
+from common import (GRADE_LABELS, NUM_CLASSES, REFERABLE_MIN_GRADE, decide, load_checkpoint, load_rgb, make_dataset,
                     preprocess, referable_prob, save_json)
 
 COVERAGES = [1.0, 0.95, 0.9, 0.85, 0.8, 0.7, 0.6, 0.5]
@@ -172,7 +172,8 @@ def evaluate_split(name, logits, y, cal, ci=True):
     pred = p_cal.argmax(1)  # temperature does not change the argmax
     conf = p_cal.max(1)
     pr, yr = referable_prob(p_cal), y >= REFERABLE_MIN_GRADE
-    covered = conf >= cal["abstain_threshold"]
+    d = decide(p_cal, cal["abstain_threshold"], cal["referable_threshold"])
+    covered = ~d["abstained"]  # same rule as serving: low confidence OR grade/referral conflict
     res = {
         "split": name,
         "n": int(len(y)),
@@ -197,6 +198,8 @@ def evaluate_split(name, logits, y, cal, ci=True):
         "abstention": {
             "threshold": cal["abstain_threshold"],
             "abstention_rate": float(1 - covered.mean()),
+            "n_abstained_low_confidence": int((conf < cal["abstain_threshold"]).sum()),
+            "n_abstained_conflict_only": int((d["conflict"] & (conf >= cal["abstain_threshold"])).sum()),
             "n_graded": int(covered.sum()),
             "accuracy_overall": float((pred == y).mean()),
             "accuracy_graded": float((pred[covered] == y[covered]).mean()) if covered.any() else float("nan"),
@@ -211,18 +214,42 @@ def evaluate_split(name, logits, y, cal, ci=True):
     return res, p_raw, p_cal
 
 
-def coverage_table(conf_val, logits, y, temperature):
+def coverage_table(conf_val, logits, y, temperature, referable_threshold):
     p = softmax(logits / temperature)
     pred, conf = p.argmax(1), p.max(1)
+    conflict = decide(p, 0.0, referable_threshold)["conflict"]
     rows = []
     for c in COVERAGES:
         t = float(np.quantile(conf_val, 1 - c)) if c < 1 else 0.0
-        m = conf >= t
+        m = (conf >= t) & ~conflict if c < 1 else np.ones_like(conf, dtype=bool)
         rows.append({"target_val_coverage": c, "threshold_from_val": t,
                      "abstention_rate": float(1 - m.mean()), "n_graded": int(m.sum()),
                      "accuracy_graded": float((pred[m] == y[m]).mean()) if m.any() else None,
                      "qwk_graded": qwk(y[m], pred[m]) if m.sum() > 1 else None})
     return pd.DataFrame(rows)
+
+
+def gate_subset(name, ids, img_dir, logits, y, cal, thresholds_path):
+    """Metrics on the images the deployed quality gate would accept (raw images, BGR)."""
+    import quality  # ml/quality.py
+    thr = quality.load_thresholds(thresholds_path)
+    ok = []
+    for i in ids:
+        src = next((p for ext in (".png", ".jpg", ".jpeg", ".tif", ".JPG", ".PNG")
+                    if (p := Path(img_dir) / f"{i}{ext}").exists()), None)
+        img = cv2.imread(str(src)) if src else None
+        ok.append(bool(img is not None and quality.check(img, thr)["ok"]))
+    ok = np.array(ok)
+    out = {"reject_rate": float(1 - ok.mean()), "n_passed": int(ok.sum()), "n": int(len(ok))}
+    if ok.sum() > 10:
+        r, _, _ = evaluate_split(f"{name} (gate-passed)", logits[ok], y[ok], cal, ci=False)
+        out["passed"] = {"qwk": r["grading"]["qwk"], "accuracy": r["grading"]["accuracy"],
+                         "referable_sensitivity": r["referable"]["sensitivity"],
+                         "referable_specificity": r["referable"]["specificity"],
+                         "referable_auc": r["referable"]["auc"],
+                         "abstention_rate": r["abstention"]["abstention_rate"]}
+    print(f"[{name}] quality gate rejects {out['reject_rate']:.3f}", flush=True)
+    return out
 
 
 def plot_reliability(panels, path):
@@ -268,6 +295,8 @@ def main():
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--no_ci", action="store_true")
     ap.add_argument("--calibration", default="", help="reuse this calibration.json (fitted on val) instead of refitting")
+    ap.add_argument("--quality_thresholds", default="", help="also report metrics on images the quality gate passes")
+    ap.add_argument("--img_dir", default="", help="raw APTOS images (for the quality-gate subset on test)")
     args = ap.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -312,12 +341,16 @@ def main():
     print(f"[val] T={temperature:.3f} abstain_thr={cal['abstain_threshold']:.3f} "
           f"referable_thr={cal['referable_threshold']:.3f}", flush=True)
 
-    # ---- 2. Apply unchanged to TEST (scored once) ---------------------------
+    # ---- 2. Apply unchanged to TEST (measurement only, nothing fitted) -------
     val_res, pv_raw, pv_cal = evaluate_split("validation", lv, yv, cal, ci=False)
     lt = predict_logits(model, te.id_code, args.cache_dir, device, workers=args.workers)
     yt = te.diagnosis.values
     test_res, pt_raw, pt_cal = evaluate_split("test", lt, yt, cal, ci=not args.no_ci)
-    coverage_table(pv.max(1), lt, yt, temperature).to_csv(out / "abstention_test.csv", index=False)
+    coverage_table(pv.max(1), lt, yt, temperature, cal["referable_threshold"]).to_csv(
+        out / "abstention_test.csv", index=False)
+    if args.quality_thresholds and args.img_dir:
+        test_res["quality_gate"] = gate_subset("test", te.id_code, args.img_dir, lt, yt, cal,
+                                               args.quality_thresholds)
     for name, ids, y, p in (("val", va.id_code, yv, pv_cal), ("test", te.id_code, yt, pt_cal)):
         pd.DataFrame({"id_code": ids, "diagnosis": y, "pred": p.argmax(1), "confidence": p.max(1),
                       "referable_prob": referable_prob(p),
@@ -336,7 +369,11 @@ def main():
         ye = ed.diagnosis.values
         ext_res, pe_raw, pe_cal = evaluate_split(args.ext_name, le, ye, cal, ci=not args.no_ci)
         ext_res["n_failed_images"] = len(failed)
-        coverage_table(pv.max(1), le, ye, temperature).to_csv(out / "abstention_external.csv", index=False)
+        coverage_table(pv.max(1), le, ye, temperature, cal["referable_threshold"]).to_csv(
+            out / "abstention_external.csv", index=False)
+        if args.quality_thresholds:
+            ext_res["quality_gate"] = gate_subset(args.ext_name, ed.id_code, args.ext_dir, le, ye, cal,
+                                                  args.quality_thresholds)
         panels.append((f"{args.ext_name} after T", pe_cal, ye))
         drop = {
             "note": "test minus external; positive = worse on external",
@@ -357,7 +394,10 @@ def main():
             "split": "image-level stratified group split 70/15/15 (near-duplicates grouped); "
                      "APTOS has no patient IDs, so patient-level separation is not possible",
             "fitted_on_validation": ["temperature", "referable_threshold", "abstain_threshold", "model selection"],
-            "test_used_for": "final scoring only, once",
+            "test_used_for": "measurement only, after every parameter was fixed on validation; never used "
+                             "for fitting, thresholds or model selection",
+            "abstain_rule": "abstain if max calibrated prob < abstain_threshold OR the grade and the "
+                            "referable call disagree (contract v1.2)",
             "tta": False,
         },
         "calibration": cal,

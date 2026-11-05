@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from common import REFERABLE_MIN_GRADE, load_checkpoint, load_rgb, preprocess, referable_prob, save_json, to_tensor_array
+from common import REFERABLE_MIN_GRADE, decide, load_checkpoint, load_rgb, preprocess, referable_prob, save_json, to_tensor_array
 from evaluate import binary_stats, qwk, safe_auc, softmax
 
 CONDITIONS = {
@@ -117,7 +117,7 @@ def main():
         pred, conf = p.argmax(1), p.max(1)
         pr, yr = referable_prob(p), y >= REFERABLE_MIN_GRADE
         b = binary_stats(pr, yr, cal["referable_threshold"])
-        covered = conf >= cal["abstain_threshold"]
+        covered = ~decide(p, cal["abstain_threshold"], cal["referable_threshold"])["abstained"]
         row = {"condition": c, "n": int(len(y)), "accuracy": float((pred == y).mean()), "qwk": qwk(y, pred),
                "referable_sensitivity": b["sensitivity"], "referable_specificity": b["specificity"],
                "referable_auc": safe_auc(yr, pr), "abstention_rate": float(1 - covered.mean()),

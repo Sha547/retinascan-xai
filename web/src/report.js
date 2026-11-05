@@ -70,7 +70,7 @@ export async function generateReport({
     font(13, true);
     doc.text('RetinaScan XAI', margin, 18);
     font(9, false, MUTED);
-    doc.text('Diabetic retinopathy screening: referral report', margin, 23.5);
+    doc.text('Diabetic retinopathy screening report', margin, 23.5);
     font(9, false, MUTED);
     doc.text(`Case ${result.case_id}`, margin + width, 18, { align: 'right' });
     doc.text(`Printed ${formatDateTime(new Date())}`, margin + width, 23.5, { align: 'right' });
@@ -80,7 +80,7 @@ export async function generateReport({
       font(10);
       doc.text('Primary health centre: ____________________________________________', margin, y);
       y += 7;
-      doc.text('Referred to: ______________________________________________________', margin, y);
+      doc.text('Referred to (if referred): ________________________________________', margin, y);
       y += 6;
     }
     if (mock || result.model.mock) {
@@ -186,7 +186,27 @@ export async function generateReport({
     ['Case status', statusLabel(result.status)],
   ]);
 
-  heading('Model findings', 60);
+  const lastDecision = result.decisions?.length ? result.decisions[result.decisions.length - 1] : null;
+  if (lastDecision && result.final_grade != null) {
+    // The reviewing doctor's decision comes first and overrides anything the model suggested.
+    heading('Reviewer decision');
+    kvTable([
+      ['Final grade (reviewer)', `${result.final_grade}  ${GRADE_LABELS[result.final_grade]}`, true],
+      [
+        'Referral status',
+        result.final_grade >= 2
+          ? 'Referable DR (final grade 2 or above): refer to an ophthalmologist'
+          : 'Not referable DR (final grade below 2)',
+        true,
+      ],
+      [
+        'Decision',
+        `${lastDecision.action === 'override' ? 'Overrode the model grade' : 'Accepted the model grade'} · ${lastDecision.reviewer} · ${formatDateTime(lastDecision.created_at)}`,
+      ],
+    ]);
+  }
+
+  heading(lastDecision ? 'Model findings (before review)' : 'Model findings', 60);
   if (!p) paragraph('No grade: the image did not pass the quality check.', { bold: true });
   else {
     if (p.abstained)
@@ -227,10 +247,15 @@ export async function generateReport({
     } else paragraph('Grade probabilities unavailable in this fixture.', { color: MUTED });
   }
 
-  heading('Recommendation');
+  const overridden = lastDecision?.action === 'override';
+  heading("Model's recommendation");
   paragraph(result.recommendation ?? 'Recommendation unavailable in this summary-only fixture.', {
-    bold: true,
+    bold: !lastDecision,
   });
+  if (overridden)
+    paragraph('Superseded by the reviewer decision above.', { color: MUTED });
+  else if (lastDecision)
+    paragraph('The reviewer accepted the model grade (see above).', { color: MUTED });
 
   heading('Fundus image', 76);
   const imgW = (width - 8) / 2;
@@ -329,5 +354,5 @@ export async function generateReport({
     }
   }
   const safeId = result.case_id.replace(/[^\w-]/g, '');
-  doc.save(`RetinaScan-referral-${safeId}.pdf`);
+  doc.save(`RetinaScan-screening-${safeId}.pdf`);
 }

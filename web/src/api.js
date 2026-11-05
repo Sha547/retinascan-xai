@@ -36,7 +36,12 @@ export const GRADE_LABELS = [
   'Severe NPDR',
   'Proliferative DR',
 ];
-export const percent = (value) => (value == null ? 'Unavailable' : `${(value * 100).toFixed(1)}%`);
+export const percent = (value) => {
+  if (value == null) return 'Unavailable';
+  // Never print a calibrated probability as a certainty.
+  if (value >= 0.9995) return '>99.9%';
+  return `${(value * 100).toFixed(1)}%`;
+};
 
 async function request(path, options = {}, binary = false) {
   const response = await fetch(`/api${path}`, {

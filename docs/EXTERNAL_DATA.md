@@ -65,12 +65,25 @@ IDRiD is the only external set. Do not attach `mariaherrerot/idrid-dataset` (see
 | Test | 34 | 5 | 32 | 19 | 13 | 103 |
 | All | 168 | 25 | 168 | 93 | 62 | 516 |
 
-**What is not verified yet**
+**Verified on Kaggle (2026-11-05, kernel `sha547/retinascan-phase2`)**
 
-- The Kaggle label CSVs were not read here: anonymous download of files in that nested path returned 404, and the IEEE original needs a login. The check runs on Kaggle instead: `prepare_external.py` stops unless the grade counts match the table exactly.
-- That check compares counts, not per-image labels, and its reference is a third-party copy. It would catch a wrong label set, but not labels swapped between images with the same totals.
-- The CSV column names are from memory of the official file. The script matches on the words "image" and "retinopathy", and stops with the actual header if they are not found.
-- Grade 4 as proliferative rests on the Hugging Face class names. One search summary of the data paper described grade 4 as "Severe DR". The paper itself could not be opened (403), so lane A should confirm this against the paper.
+- `prepare_external.py` found both official label CSVs and their columns, matched every label
+  to an image, and the grade counts matched the reference exactly:
+  `Wrote 516 images; grades {0: 168, 1: 25, 2: 168, 3: 93, 4: 62}`.
+- The check compares counts, not per-image labels. It would catch a wrong label set, but not
+  labels swapped between images with the same totals.
+
+**Still not fully confirmed: what grade 4 means**
+
+- The IDRiD data paper (Porwal et al., *Data* 2018) describes the scale as
+  "0 (No apparent DR) to 4 (Severe DR)". A later IDRiD benchmark paper states that the grading
+  follows the international clinical (ICDR) protocol, in which grade 4 is proliferative DR.
+  The challenge paper that would settle the naming could not be retrieved.
+- We map IDRiD 0 to 4 onto APTOS 0 to 4 unchanged (ICDR). **Referable-DR results (grade >= 2) do
+  not depend on this**, because grades 3 and 4 are referable either way. The 5-class IDRiD
+  accuracy and QWK do rest on the ICDR assumption.
+- Sources: https://www.doi.org/10.3390/DATA3030025 , https://arxiv.org/pdf/2008.09772 ,
+  https://ieee-dataport.org/node/956
 
 **Mismatches with APTOS**
 

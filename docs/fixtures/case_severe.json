@@ -28,6 +28,7 @@
     ],
     "confidence": 0.65,
     "abstained": false,
+    "abstain_reason": null,
     "referable": true,
     "referable_prob": 0.97
   },
@@ -59,7 +60,7 @@
       }
     ]
   },
-  "priority": 1.145,
+  "priority": 1.58,
   "final_grade": null,
   "decisions": [],
   "model": {

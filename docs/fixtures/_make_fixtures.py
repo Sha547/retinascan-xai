@@ -41,7 +41,9 @@ def heatmap(cx, cy, r, size=128):
 
 
 def priority(pred):
-    p = pred["referable_prob"] + 0.5 * (1 - pred["confidence"]) + (0.25 if pred["abstained"] else 0)
+    expected = sum(k * q for k, q in enumerate(pred["probs"]))
+    p = (pred["referable_prob"] + 0.5 * expected / 4 + 0.5 * (1 - pred["confidence"])
+         + (0.25 if pred["abstained"] else 0))
     return round(p, 3)
 
 
@@ -49,9 +51,13 @@ def prediction(probs):
     conf = max(probs)
     grade = probs.index(conf)
     ref = round(sum(probs[2:]), 3)
+    referable = ref >= MODEL["referable_threshold"]
+    low = conf < MODEL["abstain_threshold"]
+    conflict = (grade >= 2) != referable
     return {"grade": grade, "grade_label": LABELS[grade], "probs": probs, "confidence": conf,
-            "abstained": conf < MODEL["abstain_threshold"],
-            "referable": ref >= MODEL["referable_threshold"], "referable_prob": ref}
+            "abstained": low or conflict,
+            "abstain_reason": "low_confidence" if low else "grade_referral_conflict" if conflict else None,
+            "referable": referable, "referable_prob": ref}
 
 
 def recommendation(pred):

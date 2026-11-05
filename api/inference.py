@@ -31,18 +31,23 @@ class ModelUnavailable(Exception):
 
 
 def build_prediction(probs: list[float], abstain_threshold: float, referable_threshold: float) -> dict:
-    """The contract's section 1 rules, shared by every predictor."""
+    """The contract's section 1 rules, via ml/common.decide (the same code evaluation uses)."""
+    from common import decide
+
+    d = decide(np.array(probs), abstain_threshold, referable_threshold)
     confidence = max(probs)
     grade = probs.index(confidence)
-    referable_prob = round(sum(probs[REFERABLE_MIN_GRADE:]), 4)
+    abstained = bool(d["abstained"])
     return {
         "grade": grade,
         "grade_label": GRADE_LABELS[grade],
         "probs": probs,
         "confidence": confidence,
-        "abstained": confidence < abstain_threshold,
-        "referable": referable_prob >= referable_threshold,
-        "referable_prob": referable_prob,
+        "abstained": abstained,
+        "abstain_reason": (None if not abstained else
+                           "low_confidence" if confidence < abstain_threshold else "grade_referral_conflict"),
+        "referable": bool(d["referable"]),
+        "referable_prob": round(float(d["ref_prob"]), 4),
     }
 
 
@@ -63,8 +68,9 @@ def priority_for(prediction: dict | None) -> float | None:
     """Heuristic triage score from the contract. Not clinically validated."""
     if prediction is None:
         return None
-    bonus = 0.25 if prediction["abstained"] else 0
-    return round(prediction["referable_prob"] + 0.5 * (1 - prediction["confidence"]) + bonus, 3)
+    from common import triage_priority
+
+    return round(float(triage_priority(np.array(prediction["probs"]), prediction["abstained"])), 3)
 
 
 class Predictor(ABC):

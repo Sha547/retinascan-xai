@@ -106,7 +106,8 @@ def main():
         "--size", size, "--which", "val,test", *no_clahe], log)
     shutil.copy(ART / "calibration.json", ART / "calibration_from_full_run.json")
     sh(["evaluate.py", "--ckpt", ART / "model.pt", "--splits", ART / "splits.csv", "--cache_dir", CACHE,
-        "--out", ART, "--calibration", ART / "calibration_from_full_run.json", *ext_args], log)
+        "--out", ART, "--calibration", ART / "calibration_from_full_run.json", *ext_args,
+        *(["--quality_thresholds", qthr, "--img_dir", img_dir] if qthr else [])], log)
 
     # 4. Degradation test on raw test images.
     sh(["degrade_test.py", "--ckpt", ART / "model.pt", "--calibration", ART / "calibration.json", "--splits",

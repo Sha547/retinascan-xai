@@ -5,7 +5,7 @@ import CaseImage from './CaseImage.jsx';
 function Flags({ c }) {
   const flags = [];
   if (c.abstained) flags.push(['Abstained', 'tone-amber']);
-  if (c.referable) flags.push(['Referable', 'tone-red']);
+  if (c.referable && !c.abstained) flags.push(['Referable', 'tone-red']); // abstained: the doctor decides
   if (c.status === 'retake') flags.push(['Retake', 'tone-amber']);
   if (!flags.length) return <span className="muted">—</span>;
   return (

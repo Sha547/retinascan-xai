@@ -22,21 +22,27 @@ Status and build plan: `PROGRESS.md`, `PLAN.md`. Measured results:
 
 ## Run it (Linux; CPU is enough)
 
+Needs Python 3.10+ and Node.js 18+ with npm (for the web app).
+
 ```bash
 # 1. Python environment (CPU-only PyTorch, about 300 MB to download)
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
 
 # 2. Trained model and serving artifacts (about 50 MB) from the Kaggle run.
-#    Needs ~/.kaggle/kaggle.json for the Kaggle account that ran the kernels.
+#    The kernels are private: this only works with the owner's Kaggle token
+#    (~/.kaggle/kaggle.json for sha547). Anyone else must retrain (next section).
 scripts/fetch_artifacts.sh
 
 # 3. Start the API (:8000) and the web app (:5173). Ctrl+C stops both.
 scripts/start.sh
 ```
 
-Open http://localhost:5173. Other devices on the same Wi-Fi can use the IP that
-`start.sh` prints. Without `artifacts/model.pt`, the API serves a **mock**
+Open http://localhost:5173. By default everything listens on this machine only.
+`LAN=1 scripts/start.sh` makes it reachable from other devices on the same Wi-Fi.
+**The API has no login**, so anyone who can reach it can see case images and post
+decisions under any name. Use LAN mode only on a network you trust; the decision log is
+not an authenticated audit trail. Without `artifacts/model.pt`, the API serves a **mock**
 predictor, and every response says `model.mock: true`. To force it, run
 `PREDICTOR=mock scripts/start.sh`.
 
@@ -53,14 +59,28 @@ The dataset is about 9.5 GB, so training runs on Kaggle, where APTOS is attached
 directly.
 
 ```bash
-.venv/bin/python kaggle/build_kernel.py --stage full      # train plus evaluate on APTOS (T4, about 15 min)
+.venv/bin/python kaggle/build_kernel.py --stage full --set version=effnet-b0-512-exp1   # train + evaluate (T4, ~15 min)
 .venv/bin/kaggle kernels push -p kaggle/kernel
 .venv/bin/python kaggle/build_kernel.py --stage phase2 \
   --set ext_dataset=aaryapatel98/indian-diabetic-retinopathy-image-dataset \
   'quality_cmd=["--img_dir","{IMG_DIR}","--splits","{SPLITS}","--out_dir","{OUT}"]'
 .venv/bin/kaggle kernels push -p kaggle/kernel             # IDRiD, quality thresholds, degradation, serving check
+.venv/bin/python kaggle/build_kernel.py --stage audit     # Grad-CAM rim audit (cam_audit.json)
+.venv/bin/kaggle kernels push -p kaggle/kernel
 .venv/bin/python ml/make_results_md.py --artifacts artifacts --out RESULTS.md
 ```
+
+GPU training is not bit-for-bit deterministic, so a retrained model will give
+slightly different numbers. The shipped numbers come from the run named in
+`RESULTS.md`.
+
+## Demo images
+
+`demo_images/` (gitignored; APTOS images are not redistributed) holds held-out
+**test-split** images that were **picked by their outcome** (confident, abstained)
+to show each path of the app, plus a synthetically darkened and blurred copy for the
+quality gate. They are illustrations, not typical cases; the typical performance is in
+`RESULTS.md`.
 
 ## Data and attribution
 

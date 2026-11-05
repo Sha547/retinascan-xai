@@ -30,7 +30,7 @@
       "confidence": 0.38,
       "abstained": true,
       "referable": true,
-      "priority": 1.1,
+      "priority": 1.318,
       "final_grade": null,
       "mock": true
     },
@@ -47,7 +47,7 @@
       "confidence": 0.71,
       "abstained": false,
       "referable": true,
-      "priority": 1.025,
+      "priority": 1.284,
       "final_grade": null,
       "mock": true
     },
@@ -64,7 +64,7 @@
       "confidence": 0.65,
       "abstained": false,
       "referable": true,
-      "priority": 1.145,
+      "priority": 1.58,
       "final_grade": null,
       "mock": true
     },
@@ -81,7 +81,7 @@
       "confidence": 0.93,
       "abstained": false,
       "referable": false,
-      "priority": 0.055,
+      "priority": 0.068,
       "final_grade": null,
       "mock": true
     },
@@ -96,9 +96,9 @@
       "grade": 1,
       "grade_label": "Mild NPDR",
       "confidence": 0.55,
-      "abstained": false,
+      "abstained": true,
       "referable": true,
-      "priority": 0.575,
+      "priority": 0.997,
       "final_grade": 2,
       "mock": true
     }

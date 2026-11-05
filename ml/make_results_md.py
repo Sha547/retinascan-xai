@@ -53,6 +53,22 @@ def table(rows, head=("Metric", "Value", "95% bootstrap CI")):
     return "\n".join(out)
 
 
+def gate_line(r):
+    g = r.get("quality_gate")
+    if not g:
+        return []
+    line = (f"- **As deployed (quality gate first):** the gate would reject {pct(g['reject_rate'])} of these "
+            f"{g['n']} images; the {g['n_passed']} it passes give ")
+    if "passed" in g:
+        q = g["passed"]
+        line += (f"QWK {f3(q['qwk'])}, accuracy {f3(q['accuracy'])}, referable sensitivity "
+                 f"{f3(q['referable_sensitivity'])} / specificity {f3(q['referable_specificity'])}, "
+                 f"abstention {pct(q['abstention_rate'])}.")
+    else:
+        line += "too few images to report."
+    return [line, ""]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--artifacts", default="artifacts")
@@ -74,6 +90,7 @@ def main():
          f"- Split: {R['protocol']['split']}.",
          f"- Fitted on validation only: {', '.join(R['protocol']['fitted_on_validation'])}.",
          f"- Test split: {R['protocol']['test_used_for']}. No test-time augmentation.",
+         *([f"- Abstention rule: {R['protocol']['abstain_rule']}."] if R["protocol"].get("abstain_rule") else []),
          f"- Temperature T = {cal['temperature']:.3f}; referable if P(grade >= 2) >= {cal['referable_threshold']:.3f} "
          f"(chosen for validation sensitivity >= {cal['target_val_sensitivity']}); abstain if max probability < "
          f"{cal['abstain_threshold']:.3f} (chosen for about {pct(cal['target_val_coverage'])} validation coverage).", ""]
@@ -89,7 +106,7 @@ def main():
 
     L += [f"## Held-out test set (n = {t['n']})", "",
           "Class counts: " + ", ".join(f"{k} {n}" for k, n in t["class_counts"].items()) + ".", "",
-          table(block(t)), "",
+          table(block(t)), "", *gate_line(t),
           "Confusion matrix (rows = true grade, columns = predicted grade):", "",
           table([[LABELS[i]] + row for i, row in enumerate(t["grading"]["confusion_matrix"])],
                 head=("true \\ pred", *[str(k) for k in range(5)])), ""]
@@ -108,8 +125,11 @@ def main():
     if ext:
         dr = R["external_drop"]
         L += [f"## External dataset: {ext['split']} (n = {ext['n']})", "",
-              "Same model, same validation-fitted temperature and thresholds; nothing refitted.", "",
-              table(block(ext)), "",
+              "Same model, same validation-fitted temperature and thresholds; nothing refitted. "
+              "IDRiD grades are mapped 0 to 4 onto the ICDR scale; the IDRiD data paper names grade 4 "
+              "\"Severe DR\", so the exact 5-class numbers rest on that mapping, but referable-DR "
+              "results (grade 2 or above) do not (see docs/EXTERNAL_DATA.md).", "",
+              table(block(ext)), "", *gate_line(ext),
               "Drop from APTOS test to external (positive = worse on external): "
               f"QWK {dr['qwk']:+.3f}, accuracy {dr['accuracy']:+.3f}, referable AUC {dr['referable_auc']:+.3f}, "
               f"sensitivity {dr['referable_sensitivity']:+.3f}, specificity {dr['referable_specificity']:+.3f}, "

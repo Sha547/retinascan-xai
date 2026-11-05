@@ -78,7 +78,7 @@ Confusion matrix (rows = true grade, columns = predicted grade):
 
 ## External dataset: IDRiD (n = 516)
 
-Same model, same validation-fitted temperature and thresholds; nothing refitted.
+Same model, same validation-fitted temperature and thresholds; nothing refitted. IDRiD grades are mapped 0 to 4 onto the ICDR scale; the IDRiD data paper names grade 4 "Severe DR", so the exact 5-class numbers rest on that mapping, but referable-DR results (grade 2 or above) do not (see docs/EXTERNAL_DATA.md).
 
 | Metric | Value | 95% bootstrap CI |
 |---|---|---|

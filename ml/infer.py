@@ -23,8 +23,8 @@ import cv2
 import numpy as np
 import torch
 
-from common import (GRADE_LABELS, REFERABLE_MIN_GRADE, heatmap_to_original, load_checkpoint, preprocess,
-                    to_tensor_array)
+from common import (GRADE_LABELS, decide, heatmap_to_original, load_checkpoint, preprocess, to_tensor_array,
+                    triage_priority)
 
 HEATMAP_NOTE = ("Grad-CAM: image regions that most influenced the predicted grade. "
                 "Coarse; not lesion detection.")
@@ -48,8 +48,7 @@ def priority(pred: dict | None) -> float | None:
     """Contract section 1, 'Triage priority' (a heuristic, not clinically validated)."""
     if pred is None:
         return None
-    p = pred["referable_prob"] + 0.5 * (1 - pred["confidence"]) + (0.25 if pred["abstained"] else 0.0)
-    return round(float(p), 3)
+    return round(float(triage_priority(np.array(pred["probs"]), pred["abstained"])), 3)
 
 
 def _colourise(cam: np.ndarray) -> np.ndarray:
@@ -104,16 +103,19 @@ class RetinaModel:
                 self.model.zero_grad(set_to_none=True)
                 logits[0, grade].backward()
 
-        conf = float(probs.max())
-        ref_p = float(probs[REFERABLE_MIN_GRADE:].sum())
+        d = decide(probs, self.cal["abstain_threshold"], self.cal["referable_threshold"])
+        abstained = bool(d["abstained"])
         pred = {
             "grade": grade,
             "grade_label": GRADE_LABELS[grade],
             "probs": [round(float(p), 4) for p in probs],
-            "confidence": round(conf, 4),
-            "abstained": conf < self.cal["abstain_threshold"],
-            "referable": ref_p >= self.cal["referable_threshold"],
-            "referable_prob": round(ref_p, 4),
+            "confidence": round(float(d["confidence"]), 4),
+            "abstained": abstained,
+            "abstain_reason": (None if not abstained else
+                               "low_confidence" if d["confidence"] < self.cal["abstain_threshold"]
+                               else "grade_referral_conflict"),
+            "referable": bool(d["referable"]),
+            "referable_prob": round(float(d["ref_prob"]), 4),
         }
         out = {"prediction": pred, "recommendation": recommendation(pred), "priority": priority(pred),
                "evidence": None, "model": self.model_info}

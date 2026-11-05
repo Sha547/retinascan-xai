@@ -58,7 +58,9 @@ def test_analyse_graded_matches_contract(client, predictor, upload):
     assert case["prediction"]["grade"] == 2
     assert case["prediction"]["grade_label"] == "Moderate NPDR"
     assert case["prediction"]["referable_prob"] == pytest.approx(0.88)
-    assert case["priority"] == pytest.approx(1.025)
+    # contract v1.2: referable_prob + 0.5*E[grade]/4 + 0.5*(1-confidence)
+    expected = 0.88 + 0.5 * (0.09 + 2 * 0.71 + 3 * 0.12 + 4 * 0.05) / 4 + 0.5 * (1 - 0.71)
+    assert case["priority"] == pytest.approx(round(expected, 3))
     assert case["recommendation"] == "Referral to an ophthalmologist is suggested."
     assert len(case["evidence"]["similar"]) == 3
     assert re.fullmatch(r"c_\d{8}_[0-9a-f]{6}", case["case_id"])
@@ -178,9 +180,10 @@ def test_pending_queue_sorted_by_priority(client, predictor, upload):
     healthy, urgent, abstained, graded = queue(predictor, upload, HEALTHY, URGENT, ABSTAIN, GRADED)
     upload(dark_bytes())
     body = client.get("/api/cases").json()
+    # v1.2 adds expected severity: a confident grade-3 case outranks an uncertain one
     assert [case["case_id"] for case in body["cases"]] == [
-        abstained["case_id"],
         urgent["case_id"],
+        abstained["case_id"],
         graded["case_id"],
         healthy["case_id"],
     ]
@@ -460,7 +463,7 @@ def test_cors_allows_the_lan_frontend(client):
         (ABSTAIN, "Model is not confident. Routed to an ophthalmologist for review."),
         (URGENT, "Urgent referral to an ophthalmologist is suggested."),
         (GRADED, "Referral to an ophthalmologist is suggested."),
-        (MILD_BUT_REFERABLE, "Referral to an ophthalmologist is suggested."),
+        (MILD_BUT_REFERABLE, "Model is not confident. Routed to an ophthalmologist for review."),
         (HEALTHY, "No referable DR suggested by the model. Re-screen as per local protocol."),
     ],
 )
@@ -474,17 +477,31 @@ def test_recommendation_and_priority_for_missing_prediction():
     assert priority_for(None) is None
 
 
-def test_referable_can_disagree_with_grade(predictor, upload):
-    predictor.queue.append(MILD_BUT_REFERABLE)
-    prediction = upload().json()["prediction"]
-    assert prediction["grade"] == 1
-    assert prediction["referable"] is True
+def test_grade_referral_conflict_abstains(predictor, upload):
+    """Contract v1.2: a grade that disagrees with the referable call is never shown as a decision."""
+    predictor.queue.append(MILD_BUT_REFERABLE)  # confident grade 1, but P(grade>=2) above threshold
+    case = upload().json()
+    prediction = case["prediction"]
+    assert prediction["grade"] == 1 and prediction["referable"] is True
+    assert prediction["abstained"] is True
+    assert prediction["abstain_reason"] == "grade_referral_conflict"
+    assert case["recommendation"].startswith("Model is not confident")
+
+
+def test_moderate_but_not_referable_abstains():
+    """The conflict found by the independent review on real test predictions: grade 2 with
+    confidence above the abstain threshold, but P(grade>=2) below the referable threshold."""
+    from common import decide
+
+    d = decide(np.array([0.02, 0.40, 0.58, 0.0, 0.0]), 0.55, 0.60)
+    assert int(d["grade"]) == 2 and not bool(d["referable"])
+    assert bool(d["conflict"]) and bool(d["abstained"])
 
 
 def test_abstained_priority_gets_bonus(predictor, upload):
     predictor.queue.append(ABSTAIN)
     case = upload().json()
-    expected = 0.54 + 0.5 * (1 - 0.38) + 0.25
+    expected = 0.54 + 0.5 * (0.38 + 2 * 0.30 + 3 * 0.14 + 4 * 0.10) / 4 + 0.5 * (1 - 0.38) + 0.25
     assert case["priority"] == pytest.approx(round(expected, 3))
 
 

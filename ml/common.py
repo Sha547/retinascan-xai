@@ -141,6 +141,38 @@ def referable_prob(probs: np.ndarray) -> np.ndarray:
     return probs[..., REFERABLE_MIN_GRADE:].sum(axis=-1)
 
 
+def decide(probs: np.ndarray, abstain_threshold: float, referable_threshold: float) -> dict:
+    """The single decision rule used by evaluation AND serving (docs/CONTRACT.md section 1).
+
+    probs: (..., 5) calibrated probabilities. Returns arrays of the same leading shape:
+      grade      argmax grade
+      confidence max probability
+      ref_prob   P(grade >= 2)
+      referable  ref_prob >= referable_threshold
+      conflict   the grade and the referable call disagree (grade >= 2 but not referable,
+                 or grade < 2 but referable)
+      abstained  confidence < abstain_threshold OR conflict: the case goes to a doctor
+    Conflict was added as a safety rule (contract v1.2). It changes no threshold.
+    """
+    probs = np.asarray(probs)
+    grade = probs.argmax(axis=-1)
+    confidence = probs.max(axis=-1)
+    ref_prob = referable_prob(probs)
+    referable = ref_prob >= referable_threshold
+    conflict = (grade >= REFERABLE_MIN_GRADE) != referable
+    return {"grade": grade, "confidence": confidence, "ref_prob": ref_prob, "referable": referable,
+            "conflict": conflict, "abstained": (confidence < abstain_threshold) | conflict}
+
+
+def triage_priority(probs: np.ndarray, abstained) -> np.ndarray:
+    """Heuristic queue order (contract v1.2): referral probability + expected severity +
+    uncertainty, plus a bonus when abstained. Not clinically validated."""
+    probs = np.asarray(probs)
+    expected_grade = (probs * np.arange(probs.shape[-1])).sum(axis=-1)
+    return (referable_prob(probs) + 0.5 * expected_grade / 4 + 0.5 * (1 - probs.max(axis=-1))
+            + 0.25 * np.asarray(abstained, dtype=float))
+
+
 def save_json(obj, path) -> None:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     Path(path).write_text(json.dumps(obj, indent=2, default=_json_default) + "\n")

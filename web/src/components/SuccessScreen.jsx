@@ -8,7 +8,7 @@ export default function SuccessScreen({ result, busy, onReset, onRegenerate, onB
       <RecordHeader result={result} onBack={onBack} busy={busy} />
       <section className="panel">
         <div className="status-block tone-green">
-          <h1>Referral PDF downloaded</h1>
+          <h1>Screening report downloaded</h1>
           <p>The report was saved to this device’s downloads folder.</p>
         </div>
         <div className="panel-body">

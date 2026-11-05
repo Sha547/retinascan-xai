@@ -13,7 +13,7 @@ Example payloads for every response live in `docs/fixtures/`. They are
 **fake** (`model.mock = true`) and exist so the frontend can be built without a
 running backend.
 
-Contract version: **1.1** (1.1: heatmap size cap; `ml/infer.py` serving API. Non-breaking.)
+Contract version: **1.2** (1.1: heatmap size cap; `ml/infer.py` serving API. 1.2: conflict rule for abstention, `abstain_reason`, severity term in triage priority. All non-breaking.)
 
 ---
 
@@ -31,11 +31,13 @@ Contract version: **1.1** (1.1: heatmap size cap; `ml/infer.py` serving API. Non
 - `probs` are **temperature-calibrated** softmax probabilities over grades 0 to 4. They sum to 1.
 - `confidence` = `max(probs)`.
 - `referable_prob` = `probs[2] + probs[3] + probs[4]`.
-- `referable` = `referable_prob >= model.referable_threshold`. This can disagree
-  with `grade` (for example, grade 1 is most likely but referable_prob is high). That is
-  intended: the referable decision uses a screening operating point.
-- `abstained` = `confidence < model.abstain_threshold`. When abstained, the grade is
-  "tentative" and the case must be reviewed by a doctor.
+- `referable` = `referable_prob >= model.referable_threshold` (a screening operating point).
+- `abstained` = `confidence < model.abstain_threshold` **or** the grade and the
+  referable call disagree (grade >= 2 but not referable, or grade < 2 but referable).
+  A self-contradictory result is never shown as a decision. When abstained, the grade and the
+  referable call are "tentative" and the case must be reviewed by a doctor.
+  `abstain_reason` is `"low_confidence"`, `"grade_referral_conflict"` or `null`.
+  The single implementation is `ml/common.decide`, used by evaluation and serving alike.
 - Temperature and both thresholds are fitted on the **validation split only**.
   The test split is never used to choose them.
 
@@ -60,7 +62,8 @@ actionable `message`, e.g. `"Image too dark: increase illumination and retake."`
 ### Triage priority (heuristic, not clinically validated)
 
 ```
-priority = referable_prob + 0.5 * (1 - confidence) + (0.25 if abstained else 0)
+priority = referable_prob + 0.5 * E[grade] / 4 + 0.5 * (1 - confidence) + (0.25 if abstained else 0)
+# E[grade] = sum_k k * probs[k]   (expected severity; implemented in ml/common.triage_priority)
 ```
 
 Rounded to 3 decimals. Quality-failed cases have `priority = null` and status
@@ -172,6 +175,7 @@ operating-point slider.
     "probs": [0.03, 0.09, 0.71, 0.12, 0.05],
     "confidence": 0.71,
     "abstained": false,
+    "abstain_reason": null,
     "referable": true,
     "referable_prob": 0.88
   },
